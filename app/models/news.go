@@ -10,4 +10,5 @@ type News struct {
 	AuthorID  uuid.UUID `json:"author_id"`
 	Author    User      `json:"author" gorm:"foreignKey:AuthorID"`
 	Published bool      `json:"published" gorm:"default:false"`
+	Status    string    `json:"status" gorm:"default:'draft'"` // draft / published
 }
