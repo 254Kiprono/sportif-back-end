@@ -33,8 +33,11 @@ func Connect(cfg *config.Config) {
 
 func AutoMigrate() {
 	err := DB.AutoMigrate(
+		&models.Permission{},
+		&models.Role{},
 		&models.User{},
 		&models.Player{},
+
 		&models.Fixture{},
 		&models.LeagueTable{},
 		&models.News{},
