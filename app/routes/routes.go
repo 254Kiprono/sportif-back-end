@@ -14,6 +14,7 @@ import (
 func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	// Repositories
 	userRepo := repository.NewUserRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
 	playerRepo := repository.NewPlayerRepository(db)
 	storeRepo := repository.NewStoreRepository(db)
 	fixtureRepo := repository.NewFixtureRepository(db)
@@ -24,7 +25,8 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	donationRepo := repository.NewDonationRepository(db)
 
 	// Services
-	authService := services.NewAuthService(userRepo, cfg)
+	authService := services.NewAuthService(userRepo, roleRepo, cfg)
+
 	playerService := services.NewPlayerService(playerRepo)
 	storeService := services.NewStoreService(storeRepo)
 	fixtureService := services.NewFixtureService(fixtureRepo)
@@ -84,9 +86,22 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 			protected.POST("/memberships/subscribe", membershipHandler.Subscribe)
 			protected.POST("/donations/member", donationHandler.Donate)
 
-			// Admin Routes
+			// Admin/Content Routes
+			// /api/news/create → Author + Admin
+			protected.POST("/news", middleware.RequireAnyRole([]string{"admin", "author"}), newsHandler.Create)
+
+			// /api/news/publish → CX + Admin
+			protected.PUT("/news/:id/publish", middleware.RequirePermission("publish_news"), newsHandler.Update) // Assuming CX has this permission
+
+			// /api/league/update → CX + Admin
+			protected.PUT("/league/:id", middleware.RequirePermission("edit_league"), leagueHandler.UpdateEntry)
+
+			// /api/store/jerseys/update → CX + Admin
+			protected.PUT("/store/jerseys/:id", middleware.RequirePermission("manage_store"), storeHandler.Update)
+
+			// Admin Only Routes
 			admin := protected.Group("/")
-			admin.Use(middleware.RoleMiddleware("admin"))
+			admin.Use(middleware.RequireRole("admin"))
 			{
 				admin.POST("/players", playerHandler.Create)
 				admin.PUT("/players/:id", playerHandler.Update)
@@ -96,16 +111,17 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 				admin.PUT("/fixtures/:id/score", fixtureHandler.UpdateScore)
 
 				admin.POST("/league", leagueHandler.CreateEntry)
-				admin.PUT("/league/:id", leagueHandler.UpdateEntry)
 
 				admin.GET("/admin/news", newsHandler.GetAllAdmin)
-				admin.POST("/news", newsHandler.Create)
 				admin.PUT("/news/:id", newsHandler.Update)
 				admin.DELETE("/news/:id", newsHandler.Delete)
 
 				admin.POST("/tickets", ticketHandler.Create)
 				admin.POST("/memberships/plans", membershipHandler.CreatePlan)
 				admin.GET("/donations", donationHandler.GetAll)
+
+				// /api/admin/users → Admin only
+				admin.GET("/admin/users", authHandler.GetAllUsers) // Assuming this exists or will be added
 			}
 		}
 	}
