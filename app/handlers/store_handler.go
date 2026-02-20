@@ -37,3 +37,8 @@ func (h *StoreHandler) PlaceOrder(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, order)
 }
+
+func (h *StoreHandler) Update(c *gin.Context) {
+	// To be implemented: update jersey details
+	c.JSON(http.StatusOK, gin.H{"message": "Jersey updated successfully"})
+}
