@@ -10,6 +10,7 @@ type UserRepository interface {
 	Create(user *models.User) error
 	GetByUsername(username string) (*models.User, error)
 	GetByID(id string) (*models.User, error)
+	GetAll() ([]models.User, error)
 }
 
 type userRepository struct {
@@ -21,33 +22,25 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 }
 
 func (r *userRepository) Create(user *models.User) error {
-	query := `INSERT INTO users (id, created_at, updated_at, full_name, username, email, phone, password, role) 
+	query := `INSERT INTO users (id, created_at, updated_at, full_name, username, email, phone, password, role_id) 
 	          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	return r.db.Exec(query, user.ID, user.CreatedAt, user.UpdatedAt, user.FullName, user.Username, user.Email, user.Phone, user.Password, user.Role).Error
+	return r.db.Exec(query, user.ID, user.CreatedAt, user.UpdatedAt, user.FullName, user.Username, user.Email, user.Phone, user.Password, user.RoleID).Error
 }
 
 func (r *userRepository) GetByUsername(username string) (*models.User, error) {
 	var user models.User
-	query := `SELECT * FROM users WHERE username = ? AND deleted_at IS NULL LIMIT 1`
-	err := r.db.Raw(query, username).Scan(&user).Error
-	if err != nil {
-		return nil, err
-	}
-	if user.Username == "" {
-		return nil, gorm.ErrRecordNotFound
-	}
-	return &user, nil
+	err := r.db.Preload("Role.Permissions").Where("username = ? AND deleted_at IS NULL", username).First(&user).Error
+	return &user, err
 }
 
 func (r *userRepository) GetByID(id string) (*models.User, error) {
 	var user models.User
-	query := `SELECT * FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1`
-	err := r.db.Raw(query, id).Scan(&user).Error
-	if err != nil {
-		return nil, err
-	}
-	if user.ID.String() == "00000000-0000-0000-0000-000000000000" {
-		return nil, gorm.ErrRecordNotFound
-	}
-	return &user, nil
+	err := r.db.Preload("Role.Permissions").Where("id = ? AND deleted_at IS NULL", id).First(&user).Error
+	return &user, err
+}
+
+func (r *userRepository) GetAll() ([]models.User, error) {
+	var users []models.User
+	err := r.db.Preload("Role.Permissions").Find(&users).Error
+	return users, err
 }
