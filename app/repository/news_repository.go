@@ -23,9 +23,9 @@ func NewNewsRepository(db *gorm.DB) NewsRepository {
 }
 
 func (r *newsRepository) Create(news *models.News) error {
-	query := `INSERT INTO news (id, created_at, updated_at, title, content, image_url, author_id, published) 
-	          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-	return r.db.Exec(query, news.ID, news.CreatedAt, news.UpdatedAt, news.Title, news.Content, news.ImageURL, news.AuthorID, news.Published).Error
+	query := `INSERT INTO news (id, created_at, updated_at, title, content, image_url, author_id, published, status) 
+	          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	return r.db.Exec(query, news.ID, news.CreatedAt, news.UpdatedAt, news.Title, news.Content, news.ImageURL, news.AuthorID, news.Published, news.Status).Error
 }
 
 func (r *newsRepository) GetAll(publishedOnly bool) ([]models.News, error) {
@@ -39,9 +39,6 @@ func (r *newsRepository) GetAll(publishedOnly bool) ([]models.News, error) {
 	}
 	query += " ORDER BY n.created_at DESC"
 
-	// Note: Scan might not automatically fill Author struct nested fields correctly with Raw SQL joins
-	// without proper naming or using Preload. But user asked for Raw SQL.
-	// For simple Raw SQL, we'll just get news.
 	err := r.db.Raw(query).Scan(&news).Error
 	return news, err
 }
@@ -54,8 +51,8 @@ func (r *newsRepository) GetByID(id string) (*models.News, error) {
 }
 
 func (r *newsRepository) Update(news *models.News) error {
-	query := `UPDATE news SET updated_at = ?, title = ?, content = ?, image_url = ?, published = ? WHERE id = ?`
-	return r.db.Exec(query, news.UpdatedAt, news.Title, news.Content, news.ImageURL, news.Published, news.ID).Error
+	query := `UPDATE news SET updated_at = ?, title = ?, content = ?, image_url = ?, published = ?, status = ? WHERE id = ?`
+	return r.db.Exec(query, news.UpdatedAt, news.Title, news.Content, news.ImageURL, news.Published, news.Status, news.ID).Error
 }
 
 func (r *newsRepository) Delete(id string) error {
