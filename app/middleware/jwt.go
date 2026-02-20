@@ -49,19 +49,82 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 		}
 
 		c.Set("user_id", claims["user_id"])
-		c.Set("role", claims["role"])
+		c.Set("role_id", claims["role_id"])
+		c.Set("role_name", claims["role_name"])
+		if perms, ok := claims["permissions"].([]interface{}); ok {
+			var permissions []string
+			for _, p := range perms {
+				if s, ok := p.(string); ok {
+					permissions = append(permissions, s)
+				}
+			}
+			c.Set("permissions", permissions)
+		}
 		c.Next()
 	}
 }
 
-func RoleMiddleware(requiredRole string) gin.HandlerFunc {
+func RequireRole(roleName string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		role, exists := c.Get("role")
-		if !exists || role != requiredRole {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+		currentUserRole, _ := c.Get("role_name")
+		if currentUserRole == "admin" {
+			c.Next()
+			return
+		}
+
+		if currentUserRole != roleName {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions: role " + roleName + " required"})
 			c.Abort()
 			return
 		}
 		c.Next()
+	}
+}
+
+func RequireAnyRole(roles []string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		currentUserRole, _ := c.Get("role_name")
+		if currentUserRole == "admin" {
+			c.Next()
+			return
+		}
+
+		for _, r := range roles {
+			if currentUserRole == r {
+				c.Next()
+				return
+			}
+		}
+
+		c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions: one of the required roles not found"})
+		c.Abort()
+	}
+}
+
+func RequirePermission(permission string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		currentUserRole, _ := c.Get("role_name")
+		if currentUserRole == "admin" {
+			c.Next()
+			return
+		}
+
+		perms, exists := c.Get("permissions")
+		if !exists {
+			c.JSON(http.StatusForbidden, gin.H{"error": "No permissions found"})
+			c.Abort()
+			return
+		}
+
+		permissions := perms.([]string)
+		for _, p := range permissions {
+			if p == permission {
+				c.Next()
+				return
+			}
+		}
+
+		c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions: " + permission + " required"})
+		c.Abort()
 	}
 }
