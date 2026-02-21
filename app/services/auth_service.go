@@ -27,11 +27,9 @@ type authService struct {
 	userRepo repository.UserRepository
 	roleRepo repository.RoleRepository
 	cfg      *config.Config
-	rdb      *redis.Client // injected Redis client — no global database calls
+	rdb      *redis.Client
 }
 
-// NewAuthService creates the auth service.
-// rdb can be nil if Redis is not available — session whitelisting will be skipped gracefully.
 func NewAuthService(
 	userRepo repository.UserRepository,
 	roleRepo repository.RoleRepository,

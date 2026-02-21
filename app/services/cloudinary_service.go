@@ -58,17 +58,6 @@ func NewCloudinaryService(cfg *config.Config) (CloudinaryService, error) {
 	return &cloudinaryService{cld: cld}, nil
 }
 
-// UploadImage uploads a file to Cloudinary with smart compression.
-//
-// Transformation breakdown (no quality loss strategy):
-//   - c_limit,w_2000,h_2000 → Constrain max dimensions only; never upscales.
-//   - q_auto:best            → Cloudinary picks the optimal quality level.
-//     "auto:best" prioritizes visual quality — typically ~40-60% file size
-//     reduction with NO perceptible quality difference to the human eye.
-//   - f_auto                 → Serves WebP to modern browsers, JPEG/PNG to older
-//     ones — all automatically based on browser Accept headers.
-//
-// This is Cloudinary's recommended approach for "high quality, small size".
 func (s *cloudinaryService) UploadImage(
 	file multipart.File,
 	header *multipart.FileHeader,
