@@ -25,3 +25,4 @@ Commit #24: docs: add architectural diagram for k8s readiness
 Commit #25: perf: introduce connection pooling for high-concurrency msql
 Commit #26: feat: add audit logs for admin actions on user records
 Commit #27: fix: prevent duplicate email registration during auth
+Commit #28: refactor: centralize response utility for json errors
