@@ -44,3 +44,4 @@
 44: feat: implement basic load-shredding for auth routes
 45: chore: update gitignore for temp build artifacts
 46: fix: resolve nil pointer in logout handler if jti missing
+47: feat: add detailed swagger annotations for new routes
