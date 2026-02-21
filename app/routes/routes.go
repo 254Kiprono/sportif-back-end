@@ -40,7 +40,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 	// Cloudinary Service (optional: graceful fallback if not configured)
 	cloudinarySvc, err := services.NewCloudinaryService(cfg)
 	if err != nil {
-		log.Printf("⚠️  Cloudinary not configured: %v — image upload endpoints will be unavailable", err)
+		log.Printf("Cloudinary not configured: %v — image upload endpoints will be unavailable", err)
 	}
 
 	// Handlers
@@ -81,7 +81,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 		// Donations (public)
 		api.POST("/donations", donationHandler.Donate)
 
-		// ─── Protected routes (JWT required) ───────────────────────────────────────
+		// Protected routes
 		protected := api.Group("/")
 		protected.Use(middleware.AuthMiddleware(cfg, rdb))
 		{
@@ -99,39 +99,27 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 			protected.PUT("/league/:id", middleware.RequirePermission("edit_league"), leagueHandler.UpdateEntry)
 			protected.PUT("/store/jerseys/:id", middleware.RequirePermission("manage_store"), storeHandler.Update)
 
-			// ─── Image Upload Routes (Cloudinary) ─────────────────────────────────
-			// Only registered if Cloudinary credentials are provided in .env
+			// Image Upload Routes (Cloudinary)
 			if cloudinarySvc != nil {
 				uploadHandler := handlers.NewUploadHandler(cloudinarySvc)
 
 				upload := protected.Group("/upload")
 				{
-					// POST /api/upload/news-image → Author + Admin
-					// Upload a featured image for a news article.
-					// After upload, take the returned "url" and set it as news.image_url.
 					upload.POST("/news-image",
 						middleware.RequireAnyRole([]string{"admin", "author"}),
 						uploadHandler.UploadNewsImage,
 					)
 
-					// POST /api/upload/match-preview → CX + Admin
-					// Upload a pre-match promo/preview photo before the game kicks off.
-					// After upload, take the returned "url" and set it as fixture.preview_image.
 					upload.POST("/match-preview",
 						middleware.RequirePermission("publish_news"),
 						uploadHandler.UploadMatchPreview,
 					)
 
-					// POST /api/upload/match-photo → CX + Admin
-					// Upload action/gallery photos after the match.
-					// After upload, take the returned "url" and add it to fixture.match_photos JSON array.
 					upload.POST("/match-photo",
 						middleware.RequirePermission("publish_news"),
 						uploadHandler.UploadMatchPhoto,
 					)
 
-					// DELETE /api/upload/image → Admin only
-					// Remove an image from Cloudinary by public_id.
 					upload.DELETE("/image",
 						middleware.RequireRole("admin"),
 						uploadHandler.DeleteImage,
@@ -139,7 +127,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 				}
 			}
 
-			// ─── Admin Only Routes ─────────────────────────────────────────────────
+			// Admin Only Routes
 			admin := protected.Group("/")
 			admin.Use(middleware.RequireRole("admin"))
 			{
