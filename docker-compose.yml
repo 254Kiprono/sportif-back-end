@@ -5,70 +5,30 @@ services:
     build: .
     container_name: sportif_backend
     ports:
-      - "8080:8080"
+      - "8001:8001"
+    # Enables host.docker.internal to resolve the linux host IP
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
-      # Database Config
-      - DB_HOST=db
-      - DB_USER=root
-      - DB_PASSWORD=password
-      - DB_NAME=webuye_sportif
-      - DB_PORT=3306
-      - DB_SSLMODE=disable
+      # Database Config (Passed from your .env file)
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+      - DB_SSLMODE=${DB_SSLMODE}
       
       # App Config
-      - PORT=8080
-      - JWT_SECRET=super-secret-key
+      - PORT=8001
+      - JWT_SECRET=${JWT_SECRET}
       
-      # Cloudinary Config (pass these from host .env)
+      # Cloudinary Config
       - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
       
-      # Redis Config
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=
-      - REDIS_DB=0
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    networks:
-      - sportif_network
-
-  db:
-    image: mysql:8.0
-    container_name: sportif_mysql
-    environment:
-      - MYSQL_ROOT_PASSWORD=password
-      - MYSQL_DATABASE=webuye_sportif
-    ports:
-      - "3307:3306" # Maps host 3307 to container 3306
-    volumes:
-      - mysql_data:/var/lib/mysql
-    networks:
-      - sportif_network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    container_name: sportif_redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - sportif_network
-
-networks:
-  sportif_network:
-    driver: bridge
-
-volumes:
-  mysql_data:
-  redis_data:
+      # Redis Config (Passed from your .env file)
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_DB=${REDIS_DB}

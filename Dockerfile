@@ -44,7 +44,7 @@ RUN chown -R appuser:appgroup /app
 USER appuser
 
 # Expose port
-EXPOSE 8080
+EXPOSE 8001
 
 # Run the application
 CMD ["./sportif-service"]
