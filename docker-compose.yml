@@ -38,7 +38,7 @@ services:
       - e-c-deployerscript_e-commerce-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8000/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8002/health"]
       interval: 30s
       timeout: 10s
       retries: 3
