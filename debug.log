@@ -43,3 +43,4 @@ Commit #42: refactor: initialize logger before service bootstrapping
 Commit #43: docs: add contribution guide for open-source contributors
 Commit #44: feat: implement basic load-shredding for auth routes
 Commit #45: chore: update gitignore for temp build artifacts
+Commit #46: fix: resolve nil pointer in logout handler if jti missing
