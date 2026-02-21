@@ -8,14 +8,17 @@ import (
 )
 
 type Config struct {
-	DBHost     string
-	DBUser     string
-	DBPassword string
-	DBName     string
-	DBPort     string
-	SSLMode    string
-	JWTSecret  string
-	Port       string
+	DBHost           string
+	DBUser           string
+	DBPassword       string
+	DBName           string
+	DBPort           string
+	SSLMode          string
+	JWTSecret        string
+	Port             string
+	CloudinaryName   string
+	CloudinaryKey    string
+	CloudinarySecret string
 }
 
 func LoadConfig() *Config {
@@ -25,14 +28,17 @@ func LoadConfig() *Config {
 	}
 
 	return &Config{
-		DBHost:     getEnv("DB_HOST", "localhost"),
-		DBUser:     getEnv("DB_USER", "postgres"),
-		DBPassword: getEnv("DB_PASSWORD", "password"),
-		DBName:     getEnv("DB_NAME", "webuye_sportif"),
-		DBPort:     getEnv("DB_PORT", "5432"),
-		SSLMode:    getEnv("DB_SSLMODE", "disable"),
-		JWTSecret:  getEnv("JWT_SECRET", "super-secret-key"),
-		Port:       getEnv("PORT", "8080"),
+		DBHost:           getEnv("DB_HOST", "localhost"),
+		DBUser:           getEnv("DB_USER", "root"),
+		DBPassword:       getEnv("DB_PASSWORD", "password"),
+		DBName:           getEnv("DB_NAME", "webuye_sportif"),
+		DBPort:           getEnv("DB_PORT", "3306"),
+		SSLMode:          getEnv("DB_SSLMODE", "disable"),
+		JWTSecret:        getEnv("JWT_SECRET", "super-secret-key"),
+		Port:             getEnv("PORT", "8080"),
+		CloudinaryName:   getEnv("CLOUDINARY_CLOUD_NAME", ""),
+		CloudinaryKey:    getEnv("CLOUDINARY_API_KEY", ""),
+		CloudinarySecret: getEnv("CLOUDINARY_API_SECRET", ""),
 	}
 }
 
