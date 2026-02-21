@@ -6,3 +6,4 @@ Commit #5: feat: implement backblaze b2 s3-compatible upload provider
 Commit #6: fix: handle mysql char(36) uuid mapping in migrations
 Commit #7: feat: add global cors middleware with origin allowlist
 Commit #8: chore: set nairobi eat timezone as default for local time
+Commit #9: feat: add health check endpoints for root and api levels
