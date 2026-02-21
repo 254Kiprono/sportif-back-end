@@ -8,12 +8,19 @@ import (
 	"webuye-sportif/app/repository"
 	"webuye-sportif/app/services"
 
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
 func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Client) {
+	// Root health check (outside /api)
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "up", "message": "Sportif Backend is running"})
+	})
+
 	// Repositories
 	userRepo := repository.NewUserRepository(db)
 	roleRepo := repository.NewRoleRepository(db)
@@ -57,6 +64,11 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 	// API Groups
 	api := r.Group("/api")
 	{
+		// API health check
+		api.GET("/health", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"status": "up", "api": "v1"})
+		})
+
 		// Auth
 		auth := api.Group("/auth")
 		{
