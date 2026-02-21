@@ -4,3 +4,4 @@
 4: refactor: extract storage logic into interface-based service
 5: feat: implement backblaze b2 s3-compatible upload provider
 6: fix: handle mysql char(36) uuid mapping in migrations
+7: feat: add global cors middleware with origin allowlist
