@@ -25,3 +25,4 @@
 25: perf: introduce connection pooling for high-concurrency msql
 26: feat: add audit logs for admin actions on user records
 27: fix: prevent duplicate email registration during auth
+28: refactor: centralize response utility for json errors
