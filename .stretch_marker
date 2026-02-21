@@ -28,3 +28,4 @@
 28: refactor: centralize response utility for json errors
 29: feat: add ticket tiering with dynamic pricing logic
 30: chore: automate redis cleanup with background worker
+31: fix: address lint issues in storage detection logic
