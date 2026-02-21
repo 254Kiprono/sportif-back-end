@@ -76,11 +76,6 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 	// before passing to the backend container.
 	api := r.Group("/")
 	{
-		// API health check
-		api.GET("/health", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{"status": "up", "api": "v1"})
-		})
-
 		// Auth
 		auth := api.Group("/auth")
 		{
