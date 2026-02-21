@@ -27,3 +27,4 @@
 27: fix: prevent duplicate email registration during auth
 28: refactor: centralize response utility for json errors
 29: feat: add ticket tiering with dynamic pricing logic
+30: chore: automate redis cleanup with background worker
