@@ -23,3 +23,4 @@
 23: chore: update .env.example with b2 credential schema
 24: docs: add architectural diagram for k8s readiness
 25: perf: introduce connection pooling for high-concurrency msql
+26: feat: add audit logs for admin actions on user records
