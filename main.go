@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 	"strconv"
 
 	"webuye-sportif/app/config"
 	"webuye-sportif/app/database"
+	"webuye-sportif/app/loggers"
 	"webuye-sportif/app/routes"
 	worker "webuye-sportif/app/utils"
 
@@ -16,6 +18,19 @@ import (
 func main() {
 	// Load config
 	cfg := config.LoadConfig()
+
+	// Initialize logger before any background workers start
+	env := os.Getenv("APP_ENV")
+	if env == "" {
+		if gin.Mode() == gin.ReleaseMode {
+			env = "production"
+		} else {
+			env = "development"
+		}
+	}
+	if err := loggers.InitLogger(env); err != nil {
+		log.Printf("Logger init failed: %v", err)
+	}
 
 	// Connect to MySQL
 	database.Connect(cfg)
