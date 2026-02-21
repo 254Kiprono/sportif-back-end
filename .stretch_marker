@@ -2,3 +2,4 @@
 2: fix: resolve race condition in redis session validation
 3: perf: optimize gorm preload for staff role permissions
 4: refactor: extract storage logic into interface-based service
+5: feat: implement backblaze b2 s3-compatible upload provider
