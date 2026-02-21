@@ -22,3 +22,4 @@ Commit #21: fix: resolve dependency conflicts in go.mod tidy
 Commit #22: feat: add order management for staff with inventory tracking
 Commit #23: chore: update .env.example with b2 credential schema
 Commit #24: docs: add architectural diagram for k8s readiness
+Commit #25: perf: introduce connection pooling for high-concurrency msql
