@@ -37,3 +37,4 @@
 37: refactor: decouple repository layer from gorm db instance
 38: chore: bump alpine version in runtime docker stage
 39: feat: add password reset reset token invalidation flow
+40: fix: handle edge cases for jwt expirations in redis
