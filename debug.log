@@ -20,3 +20,4 @@ Commit #19: feat: add mpesa payment integration stubs for later use
 Commit #20: refactor: clean up auth middleware and jwt token claims
 Commit #21: fix: resolve dependency conflicts in go.mod tidy
 Commit #22: feat: add order management for staff with inventory tracking
+Commit #23: chore: update .env.example with b2 credential schema
