@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"webuye-sportif/app/config"
 	"webuye-sportif/app/models"
@@ -23,6 +24,13 @@ func Connect(cfg *config.Config) {
 	})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	sqlDB, err := db.DB()
+	if err == nil {
+		sqlDB.SetMaxOpenConns(25)
+		sqlDB.SetMaxIdleConns(25)
+		sqlDB.SetConnMaxLifetime(time.Hour)
 	}
 
 	DB = db

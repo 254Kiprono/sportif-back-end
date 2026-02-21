@@ -9,10 +9,11 @@ import (
 	"webuye-sportif/app/services"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
-func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
+func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Client) {
 	// Repositories
 	userRepo := repository.NewUserRepository(db)
 	roleRepo := repository.NewRoleRepository(db)
@@ -26,7 +27,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	donationRepo := repository.NewDonationRepository(db)
 
 	// Services
-	authService := services.NewAuthService(userRepo, roleRepo, cfg)
+	authService := services.NewAuthService(userRepo, roleRepo, cfg, rdb)
 	playerService := services.NewPlayerService(playerRepo)
 	storeService := services.NewStoreService(storeRepo)
 	fixtureService := services.NewFixtureService(fixtureRepo)
@@ -61,6 +62,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		{
 			auth.POST("/register", authHandler.Register)
 			auth.POST("/login", authHandler.Login)
+			auth.POST("/logout", middleware.AuthMiddleware(cfg, rdb), authHandler.Logout)
 		}
 
 		// Players (public)
@@ -81,7 +83,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 
 		// ─── Protected routes (JWT required) ───────────────────────────────────────
 		protected := api.Group("/")
-		protected.Use(middleware.AuthMiddleware(cfg))
+		protected.Use(middleware.AuthMiddleware(cfg, rdb))
 		{
 			// Fan / User actions
 			protected.POST("/store/order", storeHandler.PlaceOrder)

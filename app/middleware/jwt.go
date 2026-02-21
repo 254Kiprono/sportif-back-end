@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -9,9 +10,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/redis/go-redis/v9"
 )
 
-func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
+// AuthMiddleware validates the JWT and, if Redis is available, verifies the session
+// is still live (whitelisting approach). rdb can be nil — session check is skipped.
+func AuthMiddleware(cfg *config.Config, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -48,6 +52,27 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 			return
 		}
 
+		// Validate JTI (session ID) against Redis whitelist
+		jti, ok := claims["jti"].(string)
+		if !ok || jti == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token missing session identifier"})
+			c.Abort()
+			return
+		}
+
+		if rdb != nil {
+			ctx := context.Background()
+			_, err = rdb.Get(ctx, fmt.Sprintf("session:%s", jti)).Result()
+			if err != nil {
+				// Key missing = session was logged out or expired in Redis
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Session expired or terminated. Please login again."})
+				c.Abort()
+				return
+			}
+		}
+
+		// Attach claims to context for downstream handlers
+		c.Set("jti", jti)
 		c.Set("user_id", claims["user_id"])
 		c.Set("role_id", claims["role_id"])
 		c.Set("role_name", claims["role_name"])

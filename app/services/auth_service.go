@@ -1,7 +1,9 @@
 package services
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"webuye-sportif/app/config"
@@ -9,12 +11,15 @@ import (
 	"webuye-sportif/app/repository"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService interface {
 	Register(fullName, username, email, phone, password string) error
 	Login(username, password string) (string, error)
+	Logout(jti string) error
 	GetAllUsers() ([]models.User, error)
 }
 
@@ -22,10 +27,18 @@ type authService struct {
 	userRepo repository.UserRepository
 	roleRepo repository.RoleRepository
 	cfg      *config.Config
+	rdb      *redis.Client // injected Redis client — no global database calls
 }
 
-func NewAuthService(userRepo repository.UserRepository, roleRepo repository.RoleRepository, cfg *config.Config) AuthService {
-	return &authService{userRepo, roleRepo, cfg}
+// NewAuthService creates the auth service.
+// rdb can be nil if Redis is not available — session whitelisting will be skipped gracefully.
+func NewAuthService(
+	userRepo repository.UserRepository,
+	roleRepo repository.RoleRepository,
+	cfg *config.Config,
+	rdb *redis.Client,
+) AuthService {
+	return &authService{userRepo: userRepo, roleRepo: roleRepo, cfg: cfg, rdb: rdb}
 }
 
 func (s *authService) Register(fullName, username, email, phone, password string) error {
@@ -40,13 +53,12 @@ func (s *authService) Register(fullName, username, email, phone, password string
 	}
 
 	user := &models.User{
-		BaseModel: models.BaseModel{},
-		FullName:  fullName,
-		Username:  username,
-		Email:     email,
-		Phone:     phone,
-		Password:  string(hashedPassword),
-		RoleID:    role.ID,
+		FullName: fullName,
+		Username: username,
+		Email:    email,
+		Phone:    phone,
+		Password: string(hashedPassword),
+		RoleID:   role.ID,
 	}
 
 	return s.userRepo.Create(user)
@@ -58,8 +70,7 @@ func (s *authService) Login(username, password string) (string, error) {
 		return "", errors.New("invalid credentials")
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil {
+	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return "", errors.New("invalid credentials")
 	}
 
@@ -68,15 +79,42 @@ func (s *authService) Login(username, password string) (string, error) {
 		permissions = append(permissions, p.Name)
 	}
 
+	// Unique session ID embedded in the JWT
+	jti := uuid.New().String()
+	expTime := time.Hour * 24
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"jti":         jti,
 		"user_id":     user.ID,
 		"role_id":     user.RoleID,
 		"role_name":   user.Role.Name,
 		"permissions": permissions,
-		"exp":         time.Now().Add(time.Hour * 24).Unix(),
+		"exp":         time.Now().Add(expTime).Unix(),
 	})
 
-	return token.SignedString([]byte(s.cfg.JWTSecret))
+	tokenString, err := token.SignedString([]byte(s.cfg.JWTSecret))
+	if err != nil {
+		return "", err
+	}
+
+	// Store session in Redis using the injected client (whitelist approach)
+	if s.rdb != nil {
+		ctx := context.Background()
+		key := fmt.Sprintf("session:%s", jti)
+		if err = s.rdb.Set(ctx, key, user.ID.String(), expTime).Err(); err != nil {
+			return "", errors.New("failed to create session")
+		}
+	}
+
+	return tokenString, nil
+}
+
+func (s *authService) Logout(jti string) error {
+	if s.rdb == nil {
+		return nil
+	}
+	ctx := context.Background()
+	return s.rdb.Del(ctx, fmt.Sprintf("session:%s", jti)).Err()
 }
 
 func (s *authService) GetAllUsers() ([]models.User, error) {

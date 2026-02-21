@@ -19,6 +19,10 @@ type Config struct {
 	CloudinaryName   string
 	CloudinaryKey    string
 	CloudinarySecret string
+	RedisHost        string
+	RedisPort        string
+	RedisPassword    string
+	RedisDB          string
 }
 
 func LoadConfig() *Config {
@@ -39,6 +43,10 @@ func LoadConfig() *Config {
 		CloudinaryName:   getEnv("CLOUDINARY_CLOUD_NAME", ""),
 		CloudinaryKey:    getEnv("CLOUDINARY_API_KEY", ""),
 		CloudinarySecret: getEnv("CLOUDINARY_API_SECRET", ""),
+		RedisHost:        getEnv("REDIS_HOST", "localhost"),
+		RedisPort:        getEnv("REDIS_PORT", "6379"),
+		RedisPassword:    getEnv("REDIS_PASSWORD", ""),
+		RedisDB:          getEnv("REDIS_DB", "0"),
 	}
 }
 
