@@ -45,3 +45,4 @@ Commit #44: feat: implement basic load-shredding for auth routes
 Commit #45: chore: update gitignore for temp build artifacts
 Commit #46: fix: resolve nil pointer in logout handler if jti missing
 Commit #47: feat: add detailed swagger annotations for new routes
+Commit #48: refactor: clean up main.go dependency injection
