@@ -47,3 +47,4 @@ Commit #46: fix: resolve nil pointer in logout handler if jti missing
 Commit #47: feat: add detailed swagger annotations for new routes
 Commit #48: refactor: clean up main.go dependency injection
 Commit #49: feat: finalize b2 migration and delete legacy cloudinary code
+Commit #50: release: v1.1.0 ready for production environment
