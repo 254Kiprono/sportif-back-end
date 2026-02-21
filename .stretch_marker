@@ -19,3 +19,4 @@
 19: feat: add mpesa payment integration stubs for later use
 20: refactor: clean up auth middleware and jwt token claims
 21: fix: resolve dependency conflicts in go.mod tidy
+22: feat: add order management for staff with inventory tracking
