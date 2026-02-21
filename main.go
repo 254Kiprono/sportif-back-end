@@ -10,6 +10,7 @@ import (
 	"webuye-sportif/app/config"
 	"webuye-sportif/app/database"
 	"webuye-sportif/app/loggers"
+	"webuye-sportif/app/middleware"
 	"webuye-sportif/app/routes"
 	worker "webuye-sportif/app/utils"
 
@@ -75,6 +76,9 @@ func main() {
 
 	// Initialize Gin
 	r := gin.Default()
+
+	// Use CORS middleware
+	r.Use(middleware.CORSMiddleware())
 
 	// Setup routes — pass database.Redis (will be nil if Redis failed to connect)
 	routes.SetupRoutes(r, database.DB, cfg, database.Redis)

@@ -16,10 +16,12 @@ import (
 )
 
 func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Client) {
-	// Root health check (outside /api)
-	r.GET("/health", func(c *gin.Context) {
+	// Root health check (handles both GET and HEAD for docker/wget compatibility)
+	health := func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "up", "message": "Sportif Backend is running"})
-	})
+	}
+	r.GET("/health", health)
+	r.HEAD("/health", health)
 
 	// Repositories
 	userRepo := repository.NewUserRepository(db)
@@ -70,8 +72,9 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 	fanHandler := handlers.NewFanHandler(fanService)
 	paymentHandler := handlers.NewPaymentHandler(paymentService)
 
-	// API Groups
-	api := r.Group("/api")
+	// API Groups — Using root "/" because Nginx typically strips the "/api" prefix
+	// before passing to the backend container.
+	api := r.Group("/")
 	{
 		// API health check
 		api.GET("/health", func(c *gin.Context) {
