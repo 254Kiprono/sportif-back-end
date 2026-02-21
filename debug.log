@@ -28,3 +28,4 @@ Commit #27: fix: prevent duplicate email registration during auth
 Commit #28: refactor: centralize response utility for json errors
 Commit #29: feat: add ticket tiering with dynamic pricing logic
 Commit #30: chore: automate redis cleanup with background worker
+Commit #31: fix: address lint issues in storage detection logic
