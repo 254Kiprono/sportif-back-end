@@ -34,3 +34,4 @@
 34: feat: add global request ID for traceability
 35: fix: correct match score update permission granularity
 36: feat: add search filter to fans and sponsors list
+37: refactor: decouple repository layer from gorm db instance
