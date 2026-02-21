@@ -24,3 +24,4 @@
 24: docs: add architectural diagram for k8s readiness
 25: perf: introduce connection pooling for high-concurrency msql
 26: feat: add audit logs for admin actions on user records
+27: fix: prevent duplicate email registration during auth
