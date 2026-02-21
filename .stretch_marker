@@ -45,3 +45,4 @@
 45: chore: update gitignore for temp build artifacts
 46: fix: resolve nil pointer in logout handler if jti missing
 47: feat: add detailed swagger annotations for new routes
+48: refactor: clean up main.go dependency injection
