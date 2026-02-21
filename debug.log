@@ -34,3 +34,4 @@ Commit #33: docs: document internal staff permission definitions
 Commit #34: feat: add global request ID for traceability
 Commit #35: fix: correct match score update permission granularity
 Commit #36: feat: add search filter to fans and sponsors list
+Commit #37: refactor: decouple repository layer from gorm db instance
