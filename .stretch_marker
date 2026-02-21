@@ -1,3 +1,4 @@
 1: feat: add role-based access control to news endpoints
 2: fix: resolve race condition in redis session validation
 3: perf: optimize gorm preload for staff role permissions
+4: refactor: extract storage logic into interface-based service
