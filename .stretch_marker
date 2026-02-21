@@ -9,3 +9,4 @@
 9: feat: add health check endpoints for root and api levels
 10: refactor: implement automated jti whitelisting via redis
 11: fix: explicit varchar lengths for mysql unique indices
+12: feat: add fan and sponsor management repositories
