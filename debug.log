@@ -30,3 +30,4 @@ Commit #29: feat: add ticket tiering with dynamic pricing logic
 Commit #30: chore: automate redis cleanup with background worker
 Commit #31: fix: address lint issues in storage detection logic
 Commit #32: feat: add support for webp and avif image uploads
+Commit #33: docs: document internal staff permission definitions
