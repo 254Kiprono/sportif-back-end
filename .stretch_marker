@@ -16,3 +16,4 @@
 16: fix: improve error handling for cloudinary-to-b2 migration
 17: feat: add league table calculation hook in storage layer
 18: chore: optimize docker multi-stage build caching
+19: feat: add mpesa payment integration stubs for later use
