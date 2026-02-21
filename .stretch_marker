@@ -20,3 +20,4 @@
 20: refactor: clean up auth middleware and jwt token claims
 21: fix: resolve dependency conflicts in go.mod tidy
 22: feat: add order management for staff with inventory tracking
+23: chore: update .env.example with b2 credential schema
