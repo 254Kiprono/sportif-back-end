@@ -7,3 +7,4 @@
 7: feat: add global cors middleware with origin allowlist
 8: chore: set nairobi eat timezone as default for local time
 9: feat: add health check endpoints for root and api levels
+10: refactor: implement automated jti whitelisting via redis
