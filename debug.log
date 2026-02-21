@@ -16,3 +16,4 @@ Commit #15: feat: add staff-specific permission guards for jersey crud
 Commit #16: fix: improve error handling for cloudinary-to-b2 migration
 Commit #17: feat: add league table calculation hook in storage layer
 Commit #18: chore: optimize docker multi-stage build caching
+Commit #19: feat: add mpesa payment integration stubs for later use
