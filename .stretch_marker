@@ -31,3 +31,4 @@
 31: fix: address lint issues in storage detection logic
 32: feat: add support for webp and avif image uploads
 33: docs: document internal staff permission definitions
+34: feat: add global request ID for traceability
