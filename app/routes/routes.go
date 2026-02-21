@@ -32,6 +32,9 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 	ticketRepo := repository.NewTicketRepository(db)
 	membershipRepo := repository.NewMembershipRepository(db)
 	donationRepo := repository.NewDonationRepository(db)
+	sponsorRepo := repository.NewSponsorRepository(db)
+	fanRepo := repository.NewFanRepository(db)
+	paymentRepo := repository.NewPaymentRepository(db)
 
 	// Services
 	authService := services.NewAuthService(userRepo, roleRepo, cfg, rdb)
@@ -43,6 +46,9 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 	ticketService := services.NewTicketService(ticketRepo)
 	membershipService := services.NewMembershipService(membershipRepo)
 	donationService := services.NewDonationService(donationRepo)
+	sponsorService := services.NewSponsorService(sponsorRepo)
+	fanService := services.NewFanService(fanRepo)
+	paymentService := services.NewPaymentService(paymentRepo)
 
 	// Storage Service (optional: graceful fallback if not configured)
 	storageSvc, err := services.NewStorageService(cfg)
@@ -60,6 +66,9 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 	ticketHandler := handlers.NewTicketHandler(ticketService)
 	membershipHandler := handlers.NewMembershipHandler(membershipService)
 	donationHandler := handlers.NewDonationHandler(donationService)
+	sponsorHandler := handlers.NewSponsorHandler(sponsorService)
+	fanHandler := handlers.NewFanHandler(fanService)
+	paymentHandler := handlers.NewPaymentHandler(paymentService)
 
 	// API Groups
 	api := r.Group("/api")
@@ -86,9 +95,18 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 		// League (public)
 		api.GET("/league", leagueHandler.GetTable)
 
+		// Store (public)
+		api.GET("/store/jerseys", storeHandler.GetJerseys)
+
 		// News (public)
 		api.GET("/news", newsHandler.GetAll)
 		api.GET("/news/:id", newsHandler.GetByID)
+
+		// Tickets (public)
+		api.GET("/tickets", ticketHandler.GetAll)
+
+		// Memberships (public)
+		api.GET("/memberships/plans", membershipHandler.GetPlans)
 
 		// Donations (public)
 		api.POST("/donations", donationHandler.Donate)
@@ -108,8 +126,8 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 
 			// CX + Admin (via permission): content management actions
 			protected.PUT("/news/:id/publish", middleware.RequirePermission("publish_news"), newsHandler.Update)
-			protected.PUT("/league/:id", middleware.RequirePermission("edit_league"), leagueHandler.UpdateEntry)
-			protected.PUT("/store/jerseys/:id", middleware.RequirePermission("manage_store"), storeHandler.Update)
+			protected.PUT("/league/:id", middleware.RequirePermission("manage_league"), leagueHandler.UpdateEntry)
+			protected.PUT("/store/jerseys/:id", middleware.RequirePermission("crud_jerseys"), storeHandler.Update)
 
 			// Image Upload Routes (B2 S3)
 			if storageSvc != nil {
@@ -139,29 +157,46 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 				}
 			}
 
+			// Staff Routes (permissions)
+			{
+				protected.POST("/players", middleware.RequirePermission("crud_players"), playerHandler.Create)
+				protected.PUT("/players/:id", middleware.RequirePermission("crud_players"), playerHandler.Update)
+				protected.DELETE("/players/:id", middleware.RequirePermission("crud_players"), playerHandler.Delete)
+
+				protected.POST("/fixtures", middleware.RequirePermission("crud_fixtures"), fixtureHandler.Create)
+				protected.PUT("/fixtures/:id/score", middleware.RequirePermission("update_scores"), fixtureHandler.UpdateScore)
+
+				protected.POST("/league", middleware.RequirePermission("manage_league"), leagueHandler.CreateEntry)
+
+				protected.GET("/admin/news", middleware.RequirePermission("publish_news"), newsHandler.GetAllAdmin)
+				protected.PUT("/news/:id", middleware.RequirePermission("publish_news"), newsHandler.Update)
+				protected.DELETE("/news/:id", middleware.RequirePermission("delete_news"), newsHandler.Delete)
+
+				protected.POST("/tickets", middleware.RequirePermission("manage_tickets"), ticketHandler.Create)
+				protected.GET("/store/orders", middleware.RequirePermission("manage_orders"), storeHandler.GetOrders)
+				protected.POST("/memberships/plans", middleware.RequirePermission("manage_membership"), membershipHandler.CreatePlan)
+				protected.GET("/donations", middleware.RequirePermission("view_donations"), donationHandler.GetAll)
+			}
+
 			// Admin Only Routes
-			admin := protected.Group("/")
+			admin := protected.Group("/admin")
 			admin.Use(middleware.RequireRole("admin"))
 			{
-				admin.POST("/players", playerHandler.Create)
-				admin.PUT("/players/:id", playerHandler.Update)
-				admin.DELETE("/players/:id", playerHandler.Delete)
+				admin.GET("/users", authHandler.GetAllUsers)
+				admin.GET("/sponsors", sponsorHandler.GetAll)
+				admin.POST("/sponsors", sponsorHandler.Create)
+				admin.PUT("/sponsors/:id", sponsorHandler.Update)
+				admin.DELETE("/sponsors/:id", sponsorHandler.Delete)
 
-				admin.POST("/fixtures", fixtureHandler.Create)
-				admin.PUT("/fixtures/:id/score", fixtureHandler.UpdateScore)
+				admin.GET("/fans", fanHandler.GetAll)
+				admin.POST("/fans", fanHandler.Create)
+				admin.PUT("/fans/:id", fanHandler.Update)
+				admin.DELETE("/fans/:id", fanHandler.Delete)
 
-				admin.POST("/league", leagueHandler.CreateEntry)
-
-				admin.GET("/admin/news", newsHandler.GetAllAdmin)
-				admin.PUT("/news/:id", newsHandler.Update)
-				admin.DELETE("/news/:id", newsHandler.Delete)
-
-				admin.POST("/tickets", ticketHandler.Create)
-				admin.POST("/memberships/plans", membershipHandler.CreatePlan)
-				admin.GET("/donations", donationHandler.GetAll)
-
-				// /api/admin/users → Admin only
-				admin.GET("/admin/users", authHandler.GetAllUsers)
+				admin.GET("/payments", paymentHandler.GetAll)
+				admin.POST("/payments", paymentHandler.Create)
+				admin.PUT("/payments/:id", paymentHandler.Update)
+				admin.DELETE("/payments/:id", paymentHandler.Delete)
 			}
 		}
 	}

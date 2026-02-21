@@ -21,6 +21,9 @@ func Seed() {
 		{Name: "manage_tickets", Description: "Manage ticket booking"},
 		{Name: "manage_membership", Description: "Manage membership plans"},
 		{Name: "view_donations", Description: "View all donations"},
+		{Name: "manage_sponsors", Description: "Manage sponsors"},
+		{Name: "manage_fans", Description: "Manage fans"},
+		{Name: "manage_payments", Description: "Manage payments"},
 		{Name: "publish_news", Description: "Publish or unpublish news"},
 		{Name: "delete_news", Description: "Delete news articles"},
 		{Name: "system_settings", Description: "Manage system configuration"},
@@ -55,7 +58,10 @@ func Seed() {
 		{
 			Name:        "author",
 			Description: "News content creator",
-			Permissions: getPerms([]string{"create_news", "edit_own_news", "upload_images", "view_news"}),
+			Permissions: getPerms([]string{
+				"create_news", "edit_own_news", "publish_news", "upload_images", "view_news",
+				"crud_players", "manage_league", "update_scores", "crud_jerseys", "manage_orders",
+			}),
 		},
 		{
 			Name:        "cx",

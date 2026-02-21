@@ -56,6 +56,9 @@ func AutoMigrate() {
 		&models.MembershipPlan{},
 		&models.MembershipOrder{},
 		&models.Donation{},
+		&models.Sponsor{},
+		&models.Fan{},
+		&models.Payment{},
 	)
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)

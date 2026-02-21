@@ -10,6 +10,9 @@ import (
 
 type StoreService interface {
 	PlaceOrder(userID string, items []models.OrderItem) (*models.Order, error)
+	GetJerseys() ([]models.Jersey, error)
+	GetOrders() ([]models.Order, error)
+	UpdateJersey(jersey *models.Jersey) error
 }
 
 type storeService struct {
@@ -18,6 +21,18 @@ type storeService struct {
 
 func NewStoreService(repo repository.StoreRepository) StoreService {
 	return &storeService{repo}
+}
+
+func (s *storeService) GetJerseys() ([]models.Jersey, error) {
+	return s.repo.GetJerseys()
+}
+
+func (s *storeService) GetOrders() ([]models.Order, error) {
+	return s.repo.GetOrders()
+}
+
+func (s *storeService) UpdateJersey(jersey *models.Jersey) error {
+	return s.repo.UpdateJersey(jersey)
 }
 
 func (s *storeService) PlaceOrder(userID string, items []models.OrderItem) (*models.Order, error) {

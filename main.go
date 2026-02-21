@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"webuye-sportif/app/config"
 	"webuye-sportif/app/database"
@@ -18,6 +19,27 @@ import (
 func main() {
 	// Load config
 	cfg := config.LoadConfig()
+
+	// Set Timezone
+	tz := os.Getenv("TZ")
+	if tz == "" {
+		tz = "Africa/Nairobi"
+	}
+
+	var loc *time.Location
+	if tz == "Africa/Nairobi" {
+		loc = time.FixedZone("EAT", 3*60*60)
+	} else {
+		var err error
+		loc, err = time.LoadLocation(tz)
+		if err != nil {
+			log.Printf("Warning: Failed to load timezone %s: %v", tz, err)
+			loc = time.UTC
+		}
+	}
+
+	time.Local = loc
+	log.Printf("Timezone set to %s", tz)
 
 	// Initialize logger before any background workers start
 	env := os.Getenv("APP_ENV")

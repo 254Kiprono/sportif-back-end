@@ -7,7 +7,10 @@ import (
 )
 
 type StoreRepository interface {
+	GetJerseys() ([]models.Jersey, error)
 	GetJerseyByID(id string) (*models.Jersey, error)
+	UpdateJersey(jersey *models.Jersey) error
+	GetOrders() ([]models.Order, error)
 	CreateOrder(order *models.Order) error
 	UpdateJerseyStock(id string, quantity int) error
 	Transaction(fn func(repo StoreRepository) error) error
@@ -21,11 +24,33 @@ func NewStoreRepository(db *gorm.DB) StoreRepository {
 	return &storeRepository{db}
 }
 
+func (r *storeRepository) GetJerseys() ([]models.Jersey, error) {
+	var jerseys []models.Jersey
+	err := r.db.Where("deleted_at IS NULL").Find(&jerseys).Error
+	return jerseys, err
+}
+
 func (r *storeRepository) GetJerseyByID(id string) (*models.Jersey, error) {
 	var jersey models.Jersey
 	query := `SELECT * FROM jerseys WHERE id = ? AND deleted_at IS NULL LIMIT 1`
 	err := r.db.Raw(query, id).Scan(&jersey).Error
 	return &jersey, err
+}
+
+func (r *storeRepository) UpdateJersey(jersey *models.Jersey) error {
+	return r.db.Save(jersey).Error
+}
+
+func (r *storeRepository) GetOrders() ([]models.Order, error) {
+	var orders []models.Order
+	err := r.db.
+		Preload("User").
+		Preload("Items").
+		Preload("Items.Product").
+		Where("orders.deleted_at IS NULL").
+		Order("orders.created_at DESC").
+		Find(&orders).Error
+	return orders, err
 }
 
 func (r *storeRepository) CreateOrder(order *models.Order) error {

@@ -6,6 +6,7 @@ import (
 	"webuye-sportif/app/services"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type StoreHandler struct {
@@ -14,6 +15,24 @@ type StoreHandler struct {
 
 func NewStoreHandler(service services.StoreService) *StoreHandler {
 	return &StoreHandler{service}
+}
+
+func (h *StoreHandler) GetJerseys(c *gin.Context) {
+	jerseys, err := h.service.GetJerseys()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, jerseys)
+}
+
+func (h *StoreHandler) GetOrders(c *gin.Context) {
+	orders, err := h.service.GetOrders()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, orders)
 }
 
 func (h *StoreHandler) PlaceOrder(c *gin.Context) {
@@ -39,6 +58,22 @@ func (h *StoreHandler) PlaceOrder(c *gin.Context) {
 }
 
 func (h *StoreHandler) Update(c *gin.Context) {
-	// To be implemented: update jersey details
-	c.JSON(http.StatusOK, gin.H{"message": "Jersey updated successfully"})
+	id := c.Param("id")
+	var jersey models.Jersey
+	if err := c.ShouldBindJSON(&jersey); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	uID, err := uuid.Parse(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid jersey ID format"})
+		return
+	}
+	jersey.ID = uID
+
+	if err := h.service.UpdateJersey(&jersey); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, jersey)
 }
