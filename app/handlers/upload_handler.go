@@ -8,21 +8,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// UploadHandler handles all image uploads via Cloudinary.
+// UploadHandler handles all image uploads via Backblaze B2.
 // It is separate from specific domain handlers (news, fixtures) so it's reusable.
 type UploadHandler struct {
-	cloudinaryService services.CloudinaryService
+	storageService services.StorageService
 }
 
-func NewUploadHandler(cloudinaryService services.CloudinaryService) *UploadHandler {
-	return &UploadHandler{cloudinaryService: cloudinaryService}
+func NewUploadHandler(storageService services.StorageService) *UploadHandler {
+	return &UploadHandler{storageService: storageService}
 }
 
 // UploadNewsImage handles image upload for news articles.
 // Protected: Author + Admin only (they create news content).
 //
 // Request: multipart/form-data with field "image"
-// Response: { "url": "...", "public_id": "...", "width": ..., "height": ..., "bytes": ... }
+// Response: { "url": "...", "public_id": "...", "bytes": ... }
 func (h *UploadHandler) UploadNewsImage(c *gin.Context) {
 	h.handleUpload(c, services.FolderNews)
 }
@@ -60,7 +60,7 @@ func (h *UploadHandler) handleUpload(c *gin.Context, folder services.ImageFolder
 	}
 	defer file.Close()
 
-	result, err := h.cloudinaryService.UploadImage(file, fileHeader, folder)
+	result, err := h.storageService.UploadImage(file, fileHeader, folder)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -69,18 +69,16 @@ func (h *UploadHandler) handleUpload(c *gin.Context, folder services.ImageFolder
 	c.JSON(http.StatusOK, gin.H{
 		"url":           result.SecureURL,
 		"public_id":     result.PublicID,
-		"width":         result.Width,
-		"height":        result.Height,
 		"bytes":         result.Bytes,
 		"format":        result.Format,
 		"original_name": result.OriginalName,
 	})
 }
 
-// DeleteImage removes an image from Cloudinary.
+// DeleteImage removes an image from Backblaze B2.
 // Protected: Admin only.
 //
-// Request JSON: { "public_id": "sportif/news/my-image_1234567890" }
+// Request JSON: { "public_id": "sportif/news/my-image_1234567890.jpg" }
 func (h *UploadHandler) DeleteImage(c *gin.Context) {
 	var input struct {
 		PublicID string `json:"public_id" binding:"required"`
@@ -90,7 +88,7 @@ func (h *UploadHandler) DeleteImage(c *gin.Context) {
 		return
 	}
 
-	if err := h.cloudinaryService.DeleteImage(input.PublicID); err != nil {
+	if err := h.storageService.DeleteImage(input.PublicID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete image: " + err.Error()})
 		return
 	}

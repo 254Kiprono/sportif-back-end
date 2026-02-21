@@ -37,10 +37,10 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 	membershipService := services.NewMembershipService(membershipRepo)
 	donationService := services.NewDonationService(donationRepo)
 
-	// Cloudinary Service (optional: graceful fallback if not configured)
-	cloudinarySvc, err := services.NewCloudinaryService(cfg)
+	// Storage Service (optional: graceful fallback if not configured)
+	storageSvc, err := services.NewStorageService(cfg)
 	if err != nil {
-		log.Printf("Cloudinary not configured: %v — image upload endpoints will be unavailable", err)
+		log.Printf("Backblaze B2 not configured: %v — image upload endpoints will be unavailable", err)
 	}
 
 	// Handlers
@@ -99,9 +99,9 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 			protected.PUT("/league/:id", middleware.RequirePermission("edit_league"), leagueHandler.UpdateEntry)
 			protected.PUT("/store/jerseys/:id", middleware.RequirePermission("manage_store"), storeHandler.Update)
 
-			// Image Upload Routes (Cloudinary)
-			if cloudinarySvc != nil {
-				uploadHandler := handlers.NewUploadHandler(cloudinarySvc)
+			// Image Upload Routes (B2 S3)
+			if storageSvc != nil {
+				uploadHandler := handlers.NewUploadHandler(storageSvc)
 
 				upload := protected.Group("/upload")
 				{

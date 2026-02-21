@@ -5,7 +5,7 @@ services:
     build: .
     container_name: sportif_backend
     ports:
-      - "8001:8001"
+      - "8002:8002"
     # Enables host.docker.internal to resolve the linux host IP
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -19,13 +19,15 @@ services:
       - DB_SSLMODE=${DB_SSLMODE}
       
       # App Config
-      - PORT=8001
+      - PORT=8002
       - JWT_SECRET=${JWT_SECRET}
       
-      # Cloudinary Config
-      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
-      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
-      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      # Backblaze B2 Config
+      - B2_ENDPOINT=${B2_ENDPOINT}
+      - B2_REGION=${B2_REGION}
+      - B2_BUCKET_NAME=${B2_BUCKET_NAME}
+      - B2_KEY_ID=${B2_KEY_ID}
+      - B2_APPLICATION_KEY=${B2_APPLICATION_KEY}
       
       # Redis Config (Passed from your .env file)
       - REDIS_HOST=${REDIS_HOST}

@@ -16,9 +16,11 @@ type Config struct {
 	SSLMode          string
 	JWTSecret        string
 	Port             string
-	CloudinaryName   string
-	CloudinaryKey    string
-	CloudinarySecret string
+	B2Endpoint       string
+	B2Region         string
+	B2BucketName     string
+	B2KeyID          string
+	B2ApplicationKey string
 	RedisHost        string
 	RedisPort        string
 	RedisPassword    string
@@ -39,10 +41,12 @@ func LoadConfig() *Config {
 		DBPort:           getEnv("DB_PORT", "3306"),
 		SSLMode:          getEnv("DB_SSLMODE", "disable"),
 		JWTSecret:        getEnv("JWT_SECRET", "super-secret-key"),
-		Port:             getEnv("PORT", "8080"),
-		CloudinaryName:   getEnv("CLOUDINARY_CLOUD_NAME", ""),
-		CloudinaryKey:    getEnv("CLOUDINARY_API_KEY", ""),
-		CloudinarySecret: getEnv("CLOUDINARY_API_SECRET", ""),
+		Port:             getEnv("PORT", "8002"),
+		B2Endpoint:       getEnv("B2_ENDPOINT", ""),
+		B2Region:         getEnv("B2_REGION", ""),
+		B2BucketName:     getEnv("B2_BUCKET_NAME", ""),
+		B2KeyID:          getEnv("B2_KEY_ID", ""),
+		B2ApplicationKey: getEnv("B2_APPLICATION_KEY", ""),
 		RedisHost:        getEnv("REDIS_HOST", "localhost"),
 		RedisPort:        getEnv("REDIS_PORT", "6379"),
 		RedisPassword:    getEnv("REDIS_PASSWORD", ""),
