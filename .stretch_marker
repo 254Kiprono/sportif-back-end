@@ -18,3 +18,4 @@
 18: chore: optimize docker multi-stage build caching
 19: feat: add mpesa payment integration stubs for later use
 20: refactor: clean up auth middleware and jwt token claims
+21: fix: resolve dependency conflicts in go.mod tidy
