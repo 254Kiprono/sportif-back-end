@@ -47,3 +47,4 @@
 47: feat: add detailed swagger annotations for new routes
 48: refactor: clean up main.go dependency injection
 49: feat: finalize b2 migration and delete legacy cloudinary code
+50: release: v1.1.0 ready for production environment
