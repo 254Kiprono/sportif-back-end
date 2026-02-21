@@ -1,1 +1,2 @@
 Commit #1: feat: add role-based access control to news endpoints
+Commit #2: fix: resolve race condition in redis session validation
