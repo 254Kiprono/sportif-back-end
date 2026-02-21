@@ -1,6 +1,6 @@
 # Multi-stage build for Sportif Backend
 # Stage 1: Build
-FROM golang:1.23-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git ca-certificates tzdata
@@ -44,7 +44,7 @@ RUN chown -R appuser:appgroup /app
 USER appuser
 
 # Expose port
-EXPOSE 8001
+EXPOSE 8002
 
 # Run the application
 CMD ["./sportif-service"]
