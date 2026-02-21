@@ -26,3 +26,4 @@
 26: feat: add audit logs for admin actions on user records
 27: fix: prevent duplicate email registration during auth
 28: refactor: centralize response utility for json errors
+29: feat: add ticket tiering with dynamic pricing logic
