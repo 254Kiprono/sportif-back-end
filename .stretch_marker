@@ -12,3 +12,4 @@
 12: feat: add fan and sponsor management repositories
 13: feat: implement payment tracking and automated receipts
 14: docs: update readme with deployment and nginx prefix stripping
+15: feat: add staff-specific permission guards for jersey crud
