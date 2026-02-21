@@ -37,3 +37,4 @@ Commit #36: feat: add search filter to fans and sponsors list
 Commit #37: refactor: decouple repository layer from gorm db instance
 Commit #38: chore: bump alpine version in runtime docker stage
 Commit #39: feat: add password reset reset token invalidation flow
+Commit #40: fix: handle edge cases for jwt expirations in redis
