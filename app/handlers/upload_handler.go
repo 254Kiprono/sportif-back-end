@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"webuye-sportif/app/services"
@@ -49,6 +50,7 @@ func (h *UploadHandler) UploadJerseyImage(c *gin.Context) {
 func (h *UploadHandler) handleUpload(c *gin.Context, folder services.ImageFolder) {
 	fileHeader, err := c.FormFile("image")
 	if err != nil {
+		log.Printf("Failed to get file from form: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "No image file provided. Use form-data field 'image'.",
 		})
@@ -64,6 +66,7 @@ func (h *UploadHandler) handleUpload(c *gin.Context, folder services.ImageFolder
 
 	result, err := h.storageService.UploadImage(file, fileHeader, folder)
 	if err != nil {
+		log.Printf("Upload failed: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

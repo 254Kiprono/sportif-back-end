@@ -114,13 +114,14 @@ func (s *b2StorageService) UploadImage(
 	defer cancel()
 
 	_, err = s.client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:      aws.String(s.bucketName),
-		Key:         aws.String(publicID),
-		Body:        file,
-		ContentType: aws.String(contentType),
+		Bucket:        aws.String(s.bucketName),
+		Key:           aws.String(publicID),
+		Body:          file,
+		ContentType:   aws.String(contentType),
+		ContentLength: aws.Int64(header.Size),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("B2 upload failed: %w", err)
+		return nil, fmt.Errorf("B2 upload failed (Key: %s): %w", publicID, err)
 	}
 
 	// Construct public URL
