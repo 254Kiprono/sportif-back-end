@@ -43,7 +43,7 @@ func (r *newsRepository) GetByID(id string) (*models.News, error) {
 }
 
 func (r *newsRepository) Update(news *models.News) error {
-	return r.db.Save(news).Error
+	return r.db.Model(news).Select("*").Omit("CreatedAt").Updates(news).Error
 }
 
 func (r *newsRepository) Delete(id string) error {

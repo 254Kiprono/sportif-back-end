@@ -38,5 +38,5 @@ func (r *fixtureRepository) GetByID(id string) (*models.Fixture, error) {
 }
 
 func (r *fixtureRepository) Update(fixture *models.Fixture) error {
-	return r.db.Save(fixture).Error
+	return r.db.Model(fixture).Select("*").Omit("CreatedAt").Updates(fixture).Error
 }

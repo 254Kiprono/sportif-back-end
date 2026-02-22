@@ -37,7 +37,7 @@ func (r *storeRepository) GetJerseyByID(id string) (*models.Jersey, error) {
 }
 
 func (r *storeRepository) UpdateJersey(jersey *models.Jersey) error {
-	return r.db.Save(jersey).Error
+	return r.db.Model(jersey).Select("*").Omit("CreatedAt").Updates(jersey).Error
 }
 
 func (r *storeRepository) GetOrders() ([]models.Order, error) {

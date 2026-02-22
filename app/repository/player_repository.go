@@ -39,7 +39,7 @@ func (r *playerRepository) GetByID(id string) (*models.Player, error) {
 }
 
 func (r *playerRepository) Update(player *models.Player) error {
-	return r.db.Save(player).Error
+	return r.db.Model(player).Select("*").Omit("CreatedAt").Updates(player).Error
 }
 
 func (r *playerRepository) Delete(id string) error {

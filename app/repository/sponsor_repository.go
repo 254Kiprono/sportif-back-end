@@ -39,7 +39,7 @@ func (r *sponsorRepository) Create(sponsor *models.Sponsor) error {
 }
 
 func (r *sponsorRepository) Update(sponsor *models.Sponsor) error {
-	return r.db.Save(sponsor).Error
+	return r.db.Model(sponsor).Select("*").Omit("CreatedAt").Updates(sponsor).Error
 }
 
 func (r *sponsorRepository) Delete(id string) error {

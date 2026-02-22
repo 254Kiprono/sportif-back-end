@@ -34,7 +34,7 @@ func (r *leagueRepository) GetByID(id string) (*models.LeagueTable, error) {
 }
 
 func (r *leagueRepository) Update(entry *models.LeagueTable) error {
-	return r.db.Save(entry).Error
+	return r.db.Model(entry).Select("*").Omit("CreatedAt").Updates(entry).Error
 }
 
 func (r *leagueRepository) Create(entry *models.LeagueTable) error {
