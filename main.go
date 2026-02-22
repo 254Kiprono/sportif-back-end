@@ -74,8 +74,12 @@ func main() {
 		defer redisWorker.Stop()
 	}
 
-	// Initialize Gin
-	r := gin.Default()
+	// Initialize Gin (using New to configure SkipPaths for Health Check logs)
+	r := gin.New()
+	r.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+		SkipPaths: []string{"/health"},
+	}))
+	r.Use(gin.Recovery())
 
 	// Use CORS middleware
 	r.Use(middleware.CORSMiddleware())
