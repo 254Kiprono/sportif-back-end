@@ -16,7 +16,6 @@ import (
 )
 
 func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Client) {
-	// Root health check (handles both GET and HEAD for docker/wget compatibility)
 	health := func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "up", "message": "Sportif Backend is running"})
 	}
@@ -199,5 +198,3 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 		}
 	}
 }
-
-//Tetsing
