@@ -22,9 +22,7 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 }
 
 func (r *userRepository) Create(user *models.User) error {
-	query := `INSERT INTO users (id, created_at, updated_at, full_name, username, email, phone, password, role_id) 
-	          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	return r.db.Exec(query, user.ID, user.CreatedAt, user.UpdatedAt, user.FullName, user.Username, user.Email, user.Phone, user.Password, user.RoleID).Error
+	return r.db.Create(user).Error
 }
 
 func (r *userRepository) GetByUsername(identifier string) (*models.User, error) {

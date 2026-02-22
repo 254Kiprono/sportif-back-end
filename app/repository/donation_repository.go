@@ -20,15 +20,11 @@ func NewDonationRepository(db *gorm.DB) DonationRepository {
 }
 
 func (r *donationRepository) Create(donation *models.Donation) error {
-	query := `INSERT INTO donations (id, created_at, updated_at, user_id, amount, message, payment_status) 
-	          VALUES (?, ?, ?, ?, ?, ?, ?)`
-	return r.db.Exec(query, donation.ID, donation.CreatedAt, donation.UpdatedAt, donation.UserID, donation.Amount,
-		donation.Message, donation.PaymentStatus).Error
+	return r.db.Create(donation).Error
 }
 
 func (r *donationRepository) GetAll() ([]models.Donation, error) {
 	var donations []models.Donation
-	query := `SELECT * FROM donations WHERE deleted_at IS NULL ORDER BY created_at DESC`
-	err := r.db.Raw(query).Scan(&donations).Error
+	err := r.db.Order("created_at DESC").Find(&donations).Error
 	return donations, err
 }

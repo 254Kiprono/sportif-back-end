@@ -32,8 +32,7 @@ func (r *storeRepository) GetJerseys() ([]models.Jersey, error) {
 
 func (r *storeRepository) GetJerseyByID(id string) (*models.Jersey, error) {
 	var jersey models.Jersey
-	query := `SELECT * FROM jerseys WHERE id = ? AND deleted_at IS NULL LIMIT 1`
-	err := r.db.Raw(query, id).Scan(&jersey).Error
+	err := r.db.First(&jersey, "id = ?", id).Error
 	return &jersey, err
 }
 
@@ -45,35 +44,18 @@ func (r *storeRepository) GetOrders() ([]models.Order, error) {
 	var orders []models.Order
 	err := r.db.
 		Preload("User").
-		Preload("Items").
 		Preload("Items.Product").
-		Where("orders.deleted_at IS NULL").
-		Order("orders.created_at DESC").
+		Order("created_at DESC").
 		Find(&orders).Error
 	return orders, err
 }
 
 func (r *storeRepository) CreateOrder(order *models.Order) error {
-	// Create order
-	queryOrder := `INSERT INTO orders (id, created_at, updated_at, user_id, total_amount, status, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?)`
-	if err := r.db.Exec(queryOrder, order.ID, order.CreatedAt, order.UpdatedAt, order.UserID, order.TotalAmount, order.Status, order.PaymentMethod).Error; err != nil {
-		return err
-	}
-
-	// Create order items
-	queryItem := `INSERT INTO order_items (id, created_at, updated_at, order_id, product_id, quantity, price) VALUES (?, ?, ?, ?, ?, ?, ?)`
-	for i := range order.Items {
-		item := &order.Items[i]
-		if err := r.db.Exec(queryItem, item.ID, item.CreatedAt, item.UpdatedAt, order.ID, item.ProductID, item.Quantity, item.Price).Error; err != nil {
-			return err
-		}
-	}
-	return nil
+	return r.db.Create(order).Error
 }
 
 func (r *storeRepository) UpdateJerseyStock(id string, quantity int) error {
-	query := `UPDATE jerseys SET stock_quantity = stock_quantity - ? WHERE id = ?`
-	return r.db.Exec(query, quantity, id).Error
+	return r.db.Model(&models.Jersey{}).Where("id = ?", id).Update("stock_quantity", gorm.Expr("stock_quantity - ?", quantity)).Error
 }
 
 func (r *storeRepository) Transaction(fn func(repo StoreRepository) error) error {

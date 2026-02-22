@@ -22,28 +22,21 @@ func NewFixtureRepository(db *gorm.DB) FixtureRepository {
 }
 
 func (r *fixtureRepository) Create(fixture *models.Fixture) error {
-	query := `INSERT INTO fixtures (id, created_at, updated_at, home_team, away_team, match_date, venue, home_score, away_score, status) 
-	          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	return r.db.Exec(query, fixture.ID, fixture.CreatedAt, fixture.UpdatedAt, fixture.HomeTeam, fixture.AwayTeam,
-		fixture.MatchDate, fixture.Venue, fixture.HomeScore, fixture.AwayScore, fixture.Status).Error
+	return r.db.Create(fixture).Error
 }
 
 func (r *fixtureRepository) GetAll() ([]models.Fixture, error) {
 	var fixtures []models.Fixture
-	query := `SELECT * FROM fixtures WHERE deleted_at IS NULL ORDER BY match_date ASC`
-	err := r.db.Raw(query).Scan(&fixtures).Error
+	err := r.db.Order("match_date ASC").Find(&fixtures).Error
 	return fixtures, err
 }
 
 func (r *fixtureRepository) GetByID(id string) (*models.Fixture, error) {
 	var fixture models.Fixture
-	query := `SELECT * FROM fixtures WHERE id = ? AND deleted_at IS NULL LIMIT 1`
-	err := r.db.Raw(query, id).Scan(&fixture).Error
+	err := r.db.First(&fixture, "id = ?", id).Error
 	return &fixture, err
 }
 
 func (r *fixtureRepository) Update(fixture *models.Fixture) error {
-	query := `UPDATE fixtures SET updated_at = ?, home_score = ?, away_score = ?, status = ?, venue = ?, match_date = ? WHERE id = ?`
-	return r.db.Exec(query, fixture.UpdatedAt, fixture.HomeScore, fixture.AwayScore, fixture.Status, fixture.Venue,
-		fixture.MatchDate, fixture.ID).Error
+	return r.db.Save(fixture).Error
 }

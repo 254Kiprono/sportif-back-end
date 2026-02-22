@@ -23,39 +23,29 @@ func NewNewsRepository(db *gorm.DB) NewsRepository {
 }
 
 func (r *newsRepository) Create(news *models.News) error {
-	query := `INSERT INTO news (id, created_at, updated_at, title, content, image_url, author_id, published, status) 
-	          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	return r.db.Exec(query, news.ID, news.CreatedAt, news.UpdatedAt, news.Title, news.Content, news.ImageURL, news.AuthorID, news.Published, news.Status).Error
+	return r.db.Create(news).Error
 }
 
 func (r *newsRepository) GetAll(publishedOnly bool) ([]models.News, error) {
 	var news []models.News
-	query := `SELECT n.*, u.full_name as "Author.FullName" 
-	          FROM news n 
-	          LEFT JOIN users u ON n.author_id = u.id 
-	          WHERE n.deleted_at IS NULL`
+	db := r.db.Preload("Author").Order("created_at DESC")
 	if publishedOnly {
-		query += " AND n.published = true"
+		db = db.Where("published = ?", true)
 	}
-	query += " ORDER BY n.created_at DESC"
-
-	err := r.db.Raw(query).Scan(&news).Error
+	err := db.Find(&news).Error
 	return news, err
 }
 
 func (r *newsRepository) GetByID(id string) (*models.News, error) {
 	var news models.News
-	query := `SELECT * FROM news WHERE id = ? AND deleted_at IS NULL LIMIT 1`
-	err := r.db.Raw(query, id).Scan(&news).Error
+	err := r.db.Preload("Author").First(&news, "id = ?", id).Error
 	return &news, err
 }
 
 func (r *newsRepository) Update(news *models.News) error {
-	query := `UPDATE news SET updated_at = ?, title = ?, content = ?, image_url = ?, published = ?, status = ? WHERE id = ?`
-	return r.db.Exec(query, news.UpdatedAt, news.Title, news.Content, news.ImageURL, news.Published, news.Status, news.ID).Error
+	return r.db.Save(news).Error
 }
 
 func (r *newsRepository) Delete(id string) error {
-	query := `UPDATE news SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?`
-	return r.db.Exec(query, id).Error
+	return r.db.Delete(&models.News{}, "id = ?", id).Error
 }
