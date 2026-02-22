@@ -27,9 +27,9 @@ func (r *userRepository) Create(user *models.User) error {
 	return r.db.Exec(query, user.ID, user.CreatedAt, user.UpdatedAt, user.FullName, user.Username, user.Email, user.Phone, user.Password, user.RoleID).Error
 }
 
-func (r *userRepository) GetByUsername(username string) (*models.User, error) {
+func (r *userRepository) GetByUsername(identifier string) (*models.User, error) {
 	var user models.User
-	err := r.db.Preload("Role.Permissions").Where("username = ? AND deleted_at IS NULL", username).First(&user).Error
+	err := r.db.Preload("Role.Permissions").Where("(username = ? OR email = ?) AND deleted_at IS NULL", identifier, identifier).First(&user).Error
 	return &user, err
 }
 

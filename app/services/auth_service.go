@@ -18,6 +18,7 @@ import (
 
 type AuthService interface {
 	Register(fullName, username, email, phone, password string) error
+	CreateUser(fullName, username, email, phone, password, roleName string) error
 	Login(username, password string) (string, error)
 	Logout(jti string) error
 	GetAllUsers() ([]models.User, error)
@@ -40,12 +41,16 @@ func NewAuthService(
 }
 
 func (s *authService) Register(fullName, username, email, phone, password string) error {
+	return s.CreateUser(fullName, username, email, phone, password, "user")
+}
+
+func (s *authService) CreateUser(fullName, username, email, phone, password, roleName string) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
 
-	role, err := s.roleRepo.GetByName("user")
+	role, err := s.roleRepo.GetByName(roleName)
 	if err != nil {
 		return err
 	}

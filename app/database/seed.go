@@ -92,23 +92,36 @@ func Seed() {
 	}
 
 	// 3. Admin User
-	adminRole := roles[0] // Assuming admin is first in slice
-
-	// Re-fetch to be sure
+	var adminRole models.Role
 	DB.Where("name = ?", "admin").First(&adminRole)
 
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
 	admin := models.User{
 		FullName: "System Admin",
 		Username: "admin",
-		Email:    "admin@sportif.com",
+		Email:    "admin@webuyesportif.com",
 		Phone:    "0700000000",
 		Password: string(hashedPassword),
 		RoleID:   adminRole.ID,
 	}
 	DB.FirstOrCreate(&admin, models.User{Username: "admin"})
 
-	// 4. Sample Players
+	// 4. Author User
+	var authorRole models.Role
+	DB.Where("name = ?", "author").First(&authorRole)
+
+	hashedAuthorPassword, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
+	author := models.User{
+		FullName: "Club Author",
+		Username: "author",
+		Email:    "author@webuyesportif.com",
+		Phone:    "0711111111",
+		Password: string(hashedAuthorPassword),
+		RoleID:   authorRole.ID,
+	}
+	DB.FirstOrCreate(&author, models.User{Username: "author"})
+
+	// 5. Sample Players
 	players := []models.Player{
 		{Name: "John Doe", Position: "Striker", JerseyNumber: 9, Nationality: "Kenyan", Age: 25},
 		{Name: "Jane Smith", Position: "Midfielder", JerseyNumber: 10, Nationality: "Kenyan", Age: 23},

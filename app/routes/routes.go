@@ -181,6 +181,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 			admin.Use(middleware.RequireRole("admin"))
 			{
 				admin.GET("/users", authHandler.GetAllUsers)
+				admin.POST("/users", authHandler.Create)
 				admin.GET("/sponsors", sponsorHandler.GetAll)
 				admin.POST("/sponsors", sponsorHandler.Create)
 				admin.PUT("/sponsors/:id", sponsorHandler.Update)

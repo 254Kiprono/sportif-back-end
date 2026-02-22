@@ -17,12 +17,21 @@ func NewAuthHandler(authService services.AuthService) *AuthHandler {
 }
 
 func (h *AuthHandler) Register(c *gin.Context) {
+	h.processUserCreation(c, "user")
+}
+
+func (h *AuthHandler) Create(c *gin.Context) {
+	h.processUserCreation(c, "")
+}
+
+func (h *AuthHandler) processUserCreation(c *gin.Context, defaultRole string) {
 	var input struct {
 		FullName string `json:"full_name" binding:"required"`
 		Username string `json:"username" binding:"required"`
 		Email    string `json:"email" binding:"required,email"`
 		Phone    string `json:"phone" binding:"required"`
 		Password string `json:"password" binding:"required,min=6"`
+		Role     string `json:"role"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -30,13 +39,22 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	err := h.authService.Register(input.FullName, input.Username, input.Email, input.Phone, input.Password)
+	role := input.Role
+	if role == "" {
+		if defaultRole != "" {
+			role = defaultRole
+		} else {
+			role = "user"
+		}
+	}
+
+	err := h.authService.CreateUser(input.FullName, input.Username, input.Email, input.Phone, input.Password, role)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
+	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully", "role": role})
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
