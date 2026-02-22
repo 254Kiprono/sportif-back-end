@@ -36,11 +36,13 @@ func (h *UploadHandler) UploadMatchPreview(c *gin.Context) {
 }
 
 // UploadMatchPhoto handles post-match action photo uploads.
-// Protected: CX + Admin only.
-//
-// Request: multipart/form-data with field "image"
 func (h *UploadHandler) UploadMatchPhoto(c *gin.Context) {
 	h.handleUpload(c, services.FolderMatchPhotos)
+}
+
+// UploadJerseyImage handles uploads for jersey product photos.
+func (h *UploadHandler) UploadJerseyImage(c *gin.Context) {
+	h.handleUpload(c, services.FolderJerseys)
 }
 
 // handleUpload is the shared core upload logic.

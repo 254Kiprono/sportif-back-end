@@ -4,12 +4,15 @@ import "github.com/google/uuid"
 
 type Jersey struct {
 	BaseModel
-	Name          string  `json:"name" gorm:"not null"`
-	Description   string  `json:"description"`
-	Size          string  `json:"size"`
-	Price         float64 `json:"price" gorm:"not null"`
-	StockQuantity int     `json:"stock_quantity" gorm:"default:0"`
-	ImageURL      string  `json:"image_url"`
+	Name               string  `json:"name" gorm:"not null"`
+	Description        string  `json:"description"`
+	Category           string  `json:"category"`
+	Price              float64 `json:"price" gorm:"not null"`
+	DiscountPercentage float64 `json:"discount_percentage" gorm:"default:0"`
+	StockQuantity      int     `json:"stock_quantity" gorm:"default:0"`
+	ImageURL           string  `json:"image_url"`
+	IsActive           bool    `json:"is_active" gorm:"default:true"`
+	Variants           string  `json:"variants" gorm:"type:text"` // JSON string of variants
 }
 
 type Order struct {

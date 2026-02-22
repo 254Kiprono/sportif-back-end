@@ -25,6 +25,7 @@ const (
 	FolderMatchPreview ImageFolder = "sportif/fixtures/previews"
 	FolderMatchPhotos  ImageFolder = "sportif/fixtures/match_photos"
 	FolderGeneral      ImageFolder = "sportif/general"
+	FolderJerseys      ImageFolder = "sportif/store/jerseys"
 )
 
 // UploadResult holds the returned data after a successful upload.
