@@ -9,6 +9,7 @@ import (
 	"webuye-sportif/app/config"
 	"webuye-sportif/app/models"
 	"webuye-sportif/app/repository"
+	"webuye-sportif/app/utils"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -59,7 +60,7 @@ func (s *authService) CreateUser(fullName, username, email, phone, password, rol
 		FullName: fullName,
 		Username: username,
 		Email:    email,
-		Phone:    phone,
+		Phone:    utils.FormatMSISDNKE(phone),
 		Password: string(hashedPassword),
 		RoleID:   role.ID,
 	}
@@ -67,8 +68,14 @@ func (s *authService) CreateUser(fullName, username, email, phone, password, rol
 	return s.userRepo.Create(user)
 }
 
-func (s *authService) Login(username, password string) (string, error) {
-	user, err := s.userRepo.GetByUsername(username)
+func (s *authService) Login(identifier, password string) (string, error) {
+	// Try formatting it as a phone number first just in case they used one
+	formatted := utils.FormatMSISDNKE(identifier)
+	if formatted == "" {
+		formatted = identifier
+	}
+
+	user, err := s.userRepo.GetByUsername(formatted)
 	if err != nil {
 		return "", errors.New("invalid credentials")
 	}

@@ -3,6 +3,7 @@ package database
 import (
 	"log"
 	"webuye-sportif/app/models"
+	"webuye-sportif/app/utils"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -100,11 +101,17 @@ func Seed() {
 		FullName: "System Admin",
 		Username: "admin",
 		Email:    "admin@webuyesportif.com",
-		Phone:    "0700000000",
+		Phone:    utils.FormatMSISDNKE("0700000000"),
 		Password: string(hashedPassword),
 		RoleID:   adminRole.ID,
 	}
-	DB.FirstOrCreate(&admin, models.User{Username: "admin"})
+	// Use Assign to ensure existing admin gets the new email/password
+	DB.Where(models.User{Username: "admin"}).Assign(models.User{
+		Email:    admin.Email,
+		Phone:    admin.Phone,
+		Password: admin.Password,
+		RoleID:   admin.RoleID,
+	}).FirstOrCreate(&admin)
 
 	// 4. Author User
 	var authorRole models.Role
@@ -115,11 +122,16 @@ func Seed() {
 		FullName: "Club Author",
 		Username: "author",
 		Email:    "author@webuyesportif.com",
-		Phone:    "0711111111",
+		Phone:    utils.FormatMSISDNKE("0711111111"),
 		Password: string(hashedAuthorPassword),
 		RoleID:   authorRole.ID,
 	}
-	DB.FirstOrCreate(&author, models.User{Username: "author"})
+	DB.Where(models.User{Username: "author"}).Assign(models.User{
+		Email:    author.Email,
+		Phone:    author.Phone,
+		Password: author.Password,
+		RoleID:   author.RoleID,
+	}).FirstOrCreate(&author)
 
 	// 5. Sample Players
 	players := []models.Player{
@@ -130,5 +142,5 @@ func Seed() {
 		DB.FirstOrCreate(&p, models.Player{Name: p.Name})
 	}
 
-	log.Println("Seeding completed")
+	log.Println("Seeding completed and test accounts updated")
 }
