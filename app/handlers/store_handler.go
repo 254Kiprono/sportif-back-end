@@ -35,6 +35,22 @@ func (h *StoreHandler) GetOrders(c *gin.Context) {
 	c.JSON(http.StatusOK, orders)
 }
 
+func (h *StoreHandler) UpdateStatus(c *gin.Context) {
+	id := c.Param("id")
+	var input struct {
+		Status string `json:"status" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.service.UpdateOrderStatus(id, input.Status); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Order status updated"})
+}
+
 func (h *StoreHandler) PlaceOrder(c *gin.Context) {
 	userId, _ := c.Get("user_id")
 	userIdStr := userId.(string)
@@ -57,6 +73,19 @@ func (h *StoreHandler) PlaceOrder(c *gin.Context) {
 	c.JSON(http.StatusCreated, order)
 }
 
+func (h *StoreHandler) Create(c *gin.Context) {
+	var jersey models.Jersey
+	if err := c.ShouldBindJSON(&jersey); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.service.CreateJersey(&jersey); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, jersey)
+}
+
 func (h *StoreHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 	var jersey models.Jersey
@@ -76,4 +105,13 @@ func (h *StoreHandler) Update(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, jersey)
+}
+
+func (h *StoreHandler) Delete(c *gin.Context) {
+	id := c.Param("id")
+	if err := h.service.DeleteJersey(id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Jersey deleted"})
 }

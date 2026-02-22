@@ -9,9 +9,12 @@ import (
 type StoreRepository interface {
 	GetJerseys() ([]models.Jersey, error)
 	GetJerseyByID(id string) (*models.Jersey, error)
+	CreateJersey(jersey *models.Jersey) error
 	UpdateJersey(jersey *models.Jersey) error
+	DeleteJersey(id string) error
 	GetOrders() ([]models.Order, error)
 	CreateOrder(order *models.Order) error
+	UpdateOrderStatus(id string, status string) error
 	UpdateJerseyStock(id string, quantity int) error
 	Transaction(fn func(repo StoreRepository) error) error
 }
@@ -26,7 +29,7 @@ func NewStoreRepository(db *gorm.DB) StoreRepository {
 
 func (r *storeRepository) GetJerseys() ([]models.Jersey, error) {
 	var jerseys []models.Jersey
-	err := r.db.Where("deleted_at IS NULL").Find(&jerseys).Error
+	err := r.db.Find(&jerseys).Error
 	return jerseys, err
 }
 
@@ -36,8 +39,16 @@ func (r *storeRepository) GetJerseyByID(id string) (*models.Jersey, error) {
 	return &jersey, err
 }
 
+func (r *storeRepository) CreateJersey(jersey *models.Jersey) error {
+	return r.db.Create(jersey).Error
+}
+
 func (r *storeRepository) UpdateJersey(jersey *models.Jersey) error {
 	return r.db.Model(jersey).Select("*").Omit("CreatedAt").Updates(jersey).Error
+}
+
+func (r *storeRepository) DeleteJersey(id string) error {
+	return r.db.Delete(&models.Jersey{}, "id = ?", id).Error
 }
 
 func (r *storeRepository) GetOrders() ([]models.Order, error) {
@@ -52,6 +63,10 @@ func (r *storeRepository) GetOrders() ([]models.Order, error) {
 
 func (r *storeRepository) CreateOrder(order *models.Order) error {
 	return r.db.Create(order).Error
+}
+
+func (r *storeRepository) UpdateOrderStatus(id string, status string) error {
+	return r.db.Model(&models.Order{}).Where("id = ?", id).Update("status", status).Error
 }
 
 func (r *storeRepository) UpdateJerseyStock(id string, quantity int) error {

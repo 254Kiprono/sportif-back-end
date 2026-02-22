@@ -123,6 +123,8 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 			protected.PUT("/news/:id/publish", middleware.RequirePermission("publish_news"), newsHandler.Update)
 			protected.PUT("/league/:id", middleware.RequirePermission("manage_league"), leagueHandler.UpdateEntry)
 			protected.PUT("/store/jerseys/:id", middleware.RequirePermission("crud_jerseys"), storeHandler.Update)
+			protected.POST("/store/jerseys", middleware.RequirePermission("crud_jerseys"), storeHandler.Create)
+			protected.DELETE("/store/jerseys/:id", middleware.RequirePermission("crud_jerseys"), storeHandler.Delete)
 
 			// Image Upload Routes (B2 S3)
 			if storageSvc != nil {
@@ -162,6 +164,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 				protected.PUT("/fixtures/:id/score", middleware.RequirePermission("update_scores"), fixtureHandler.UpdateScore)
 
 				protected.POST("/league", middleware.RequirePermission("manage_league"), leagueHandler.CreateEntry)
+				protected.DELETE("/league/:id", middleware.RequirePermission("manage_league"), leagueHandler.DeleteEntry)
 
 				protected.GET("/admin/news", middleware.RequirePermission("publish_news"), newsHandler.GetAllAdmin)
 				protected.PUT("/news/:id", middleware.RequirePermission("publish_news"), newsHandler.Update)
@@ -169,6 +172,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 
 				protected.POST("/tickets", middleware.RequirePermission("manage_tickets"), ticketHandler.Create)
 				protected.GET("/store/orders", middleware.RequirePermission("manage_orders"), storeHandler.GetOrders)
+				protected.PUT("/store/orders/:id/status", middleware.RequirePermission("manage_orders"), storeHandler.UpdateStatus)
 				protected.POST("/memberships/plans", middleware.RequirePermission("manage_membership"), membershipHandler.CreatePlan)
 				protected.GET("/donations", middleware.RequirePermission("view_donations"), donationHandler.GetAll)
 			}

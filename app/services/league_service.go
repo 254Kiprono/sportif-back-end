@@ -9,6 +9,7 @@ type LeagueService interface {
 	GetTable() ([]models.LeagueTable, error)
 	UpdateEntry(id string, entry *models.LeagueTable) error
 	CreateEntry(entry *models.LeagueTable) error
+	DeleteEntry(id string) error
 }
 
 type leagueService struct {
@@ -38,4 +39,8 @@ func (s *leagueService) UpdateEntry(id string, entry *models.LeagueTable) error 
 func (s *leagueService) CreateEntry(entry *models.LeagueTable) error {
 	entry.Calculate()
 	return s.repo.Create(entry)
+}
+
+func (s *leagueService) DeleteEntry(id string) error {
+	return s.repo.Delete(id)
 }

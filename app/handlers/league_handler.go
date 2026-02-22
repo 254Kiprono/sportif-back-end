@@ -51,3 +51,12 @@ func (h *LeagueHandler) CreateEntry(c *gin.Context) {
 	}
 	c.JSON(http.StatusCreated, entry)
 }
+
+func (h *LeagueHandler) DeleteEntry(c *gin.Context) {
+	id := c.Param("id")
+	if err := h.service.DeleteEntry(id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Entry deleted"})
+}

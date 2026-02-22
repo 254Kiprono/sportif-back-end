@@ -11,6 +11,7 @@ type LeagueRepository interface {
 	GetByID(id string) (*models.LeagueTable, error)
 	Update(entry *models.LeagueTable) error
 	Create(entry *models.LeagueTable) error
+	Delete(id string) error
 }
 
 type leagueRepository struct {
@@ -39,4 +40,8 @@ func (r *leagueRepository) Update(entry *models.LeagueTable) error {
 
 func (r *leagueRepository) Create(entry *models.LeagueTable) error {
 	return r.db.Create(entry).Error
+}
+
+func (r *leagueRepository) Delete(id string) error {
+	return r.db.Delete(&models.LeagueTable{}, "id = ?", id).Error
 }
