@@ -23,6 +23,7 @@ type AuthService interface {
 	Login(username, password string) (string, error)
 	Logout(jti string) error
 	GetAllUsers() ([]models.User, error)
+	DeleteUser(id string) error
 }
 
 type authService struct {
@@ -129,4 +130,8 @@ func (s *authService) Logout(jti string) error {
 
 func (s *authService) GetAllUsers() ([]models.User, error) {
 	return s.userRepo.GetAll()
+}
+
+func (s *authService) DeleteUser(id string) error {
+	return s.userRepo.Delete(id)
 }

@@ -11,6 +11,7 @@ type UserRepository interface {
 	GetByUsername(username string) (*models.User, error)
 	GetByID(id string) (*models.User, error)
 	GetAll() ([]models.User, error)
+	Delete(id string) error
 }
 
 type userRepository struct {
@@ -41,4 +42,8 @@ func (r *userRepository) GetAll() ([]models.User, error) {
 	var users []models.User
 	err := r.db.Preload("Role.Permissions").Find(&users).Error
 	return users, err
+}
+
+func (r *userRepository) Delete(id string) error {
+	return r.db.Delete(&models.User{}, "id = ?", id).Error
 }

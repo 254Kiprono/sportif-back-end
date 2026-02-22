@@ -101,3 +101,12 @@ func (h *AuthHandler) GetAllUsers(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, users)
 }
+
+func (h *AuthHandler) Delete(c *gin.Context) {
+	id := c.Param("id")
+	if err := h.authService.DeleteUser(id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+}

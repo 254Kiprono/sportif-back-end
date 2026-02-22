@@ -72,8 +72,6 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 	fanHandler := handlers.NewFanHandler(fanService)
 	paymentHandler := handlers.NewPaymentHandler(paymentService)
 
-	// API Groups — Using root "/" because Nginx typically strips the "/api" prefix
-	// before passing to the backend container.
 	api := r.Group("/")
 	{
 		// Auth
@@ -182,6 +180,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 			{
 				admin.GET("/users", authHandler.GetAllUsers)
 				admin.POST("/users", authHandler.Create)
+				admin.DELETE("/users/:id", authHandler.Delete)
 				admin.GET("/sponsors", sponsorHandler.GetAll)
 				admin.POST("/sponsors", sponsorHandler.Create)
 				admin.PUT("/sponsors/:id", sponsorHandler.Update)
