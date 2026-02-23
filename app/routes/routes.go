@@ -150,6 +150,10 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 						middleware.RequirePermission("crud_jerseys"),
 						uploadHandler.UploadJerseyImage,
 					)
+					upload.POST("/player",
+						middleware.RequirePermission("crud_players"),
+						uploadHandler.UploadPlayerImage,
+					)
 
 					upload.DELETE("/image",
 						middleware.RequireRole("admin"),

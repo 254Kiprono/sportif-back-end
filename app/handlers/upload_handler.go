@@ -46,6 +46,11 @@ func (h *UploadHandler) UploadJerseyImage(c *gin.Context) {
 	h.handleUpload(c, services.FolderJerseys)
 }
 
+// UploadPlayerImage handles uploads for player profile photos.
+func (h *UploadHandler) UploadPlayerImage(c *gin.Context) {
+	h.handleUpload(c, services.FolderPlayers)
+}
+
 // handleUpload is the shared core upload logic.
 func (h *UploadHandler) handleUpload(c *gin.Context, folder services.ImageFolder) {
 	fileHeader, err := c.FormFile("image")

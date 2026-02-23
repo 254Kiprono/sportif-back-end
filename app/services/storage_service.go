@@ -26,6 +26,7 @@ const (
 	FolderMatchPhotos  ImageFolder = "sportif/fixtures/match_photos"
 	FolderGeneral      ImageFolder = "sportif/general"
 	FolderJerseys      ImageFolder = "sportif/store/jerseys"
+	FolderPlayers      ImageFolder = "sportif/players"
 )
 
 // UploadResult holds the returned data after a successful upload.
@@ -53,9 +54,13 @@ func NewStorageService(cfg *config.Config) (StorageService, error) {
 		return nil, fmt.Errorf("Backblaze B2 credentials are not fully configured in environment variables")
 	}
 
+	keyID := strings.TrimSpace(cfg.B2KeyID)
+	appKey := strings.TrimSpace(cfg.B2ApplicationKey)
+	region := strings.TrimSpace(cfg.B2Region)
+
 	awsCfg, err := awsconfig.LoadDefaultConfig(context.TODO(),
-		awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(cfg.B2KeyID, cfg.B2ApplicationKey, "")),
-		awsconfig.WithRegion(cfg.B2Region),
+		awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(keyID, appKey, "")),
+		awsconfig.WithRegion(region),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load B2 AWS config: %w", err)
@@ -64,6 +69,7 @@ func NewStorageService(cfg *config.Config) (StorageService, error) {
 	client := s3.NewFromConfig(awsCfg, func(o *s3.Options) {
 		o.BaseEndpoint = aws.String(cfg.B2Endpoint)
 		o.UsePathStyle = true
+		o.Region = region
 	})
 
 	return &b2StorageService{
@@ -100,7 +106,6 @@ func (s *b2StorageService) UploadImage(
 		return nil, fmt.Errorf("could not read file to detect content type")
 	}
 	// Reset file pointer
-	// Reset file pointer
 	file.Seek(0, 0)
 	contentType := http.DetectContentType(buffer)
 
@@ -119,6 +124,7 @@ func (s *b2StorageService) UploadImage(
 		Body:          file,
 		ContentType:   aws.String(contentType),
 		ContentLength: aws.Int64(header.Size),
+		// Use unsigned payload to avoid "Seed signature is invalid" on B2
 	})
 	if err != nil {
 		return nil, fmt.Errorf("B2 upload failed (Key: %s): %w", publicID, err)
