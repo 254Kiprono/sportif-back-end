@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"webuye-sportif/app/config"
@@ -43,82 +44,58 @@ type StorageService interface {
 	DeleteImage(publicID string) error
 }
 
-// b2StorageService uses the native Backblaze B2 HTTP API directly,
-// bypassing the AWS S3 SDK to avoid signature compatibility issues.
+// b2StorageService uses the native Backblaze B2 HTTP API directly.
+// Authorization is lazy — it happens on first upload, not at startup.
 type b2StorageService struct {
+	mu             sync.Mutex
 	keyID          string
 	applicationKey string
 	bucketName     string
-	bucketID       string
-	downloadURL    string
-	apiURL         string
-	authToken      string
-}
-
-// b2AuthResponse is the response from b2_authorize_account
-type b2AuthResponse struct {
-	AuthorizationToken string `json:"authorizationToken"`
-	APIURL             string `json:"apiUrl"`
-	DownloadURL        string `json:"downloadUrl"`
-	AllowedBucketName  string `json:"allowed"`
-}
-
-// b2UploadURLResponse is the response from b2_get_upload_url
-type b2UploadURLResponse struct {
-	UploadURL          string `json:"uploadUrl"`
-	AuthorizationToken string `json:"authorizationToken"`
-}
-
-// b2UploadFileResponse is the response from the actual file upload
-type b2UploadFileResponse struct {
-	FileID      string `json:"fileId"`
-	FileName    string `json:"fileName"`
-	ContentType string `json:"contentType"`
+	// Populated after authorization
+	bucketID    string
+	downloadURL string
+	apiURL      string
+	authToken   string
 }
 
 func NewStorageService(cfg *config.Config) (StorageService, error) {
 	if cfg.B2KeyID == "" || cfg.B2ApplicationKey == "" || cfg.B2BucketName == "" {
-		return nil, fmt.Errorf("Backblaze B2 credentials are not fully configured")
+		return nil, fmt.Errorf("B2_KEY_ID, B2_APPLICATION_KEY and B2_BUCKET_NAME must be set")
 	}
 
-	keyID := strings.TrimSpace(cfg.B2KeyID)
-	appKey := strings.TrimSpace(cfg.B2ApplicationKey)
-	bucketName := strings.TrimSpace(cfg.B2BucketName)
-
-	svc := &b2StorageService{
-		keyID:          keyID,
-		applicationKey: appKey,
-		bucketName:     bucketName,
-	}
-
-	// Authorize immediately to get API URL and auth token
-	if err := svc.authorize(); err != nil {
-		return nil, fmt.Errorf("B2 authorization failed: %w", err)
-	}
-
-	return svc, nil
+	return &b2StorageService{
+		keyID:          strings.TrimSpace(cfg.B2KeyID),
+		applicationKey: strings.TrimSpace(cfg.B2ApplicationKey),
+		bucketName:     strings.TrimSpace(cfg.B2BucketName),
+	}, nil
 }
 
-// authorize calls b2_authorize_account to get the API URL and token
-func (s *b2StorageService) authorize() error {
-	creds := base64.StdEncoding.EncodeToString([]byte(s.keyID + ":" + s.applicationKey))
+// ensureAuthorized calls b2_authorize_account if not yet authorized (lazy init).
+func (s *b2StorageService) ensureAuthorized() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
+	if s.authToken != "" && s.apiURL != "" {
+		return nil // already authorized
+	}
+
+	creds := base64.StdEncoding.EncodeToString([]byte(s.keyID + ":" + s.applicationKey))
 	req, err := http.NewRequest("GET", "https://api.backblazeb2.com/b2api/v2/b2_authorize_account", nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not build auth request: %w", err)
 	}
 	req.Header.Set("Authorization", "Basic "+creds)
 
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("auth request failed: %w", err)
+		return fmt.Errorf("B2 auth request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
+	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("auth failed (status %d): %s", resp.StatusCode, string(body))
+		return fmt.Errorf("B2 auth failed (status %d): %s", resp.StatusCode, string(body))
 	}
 
 	var authResp struct {
@@ -126,8 +103,8 @@ func (s *b2StorageService) authorize() error {
 		APIURL             string `json:"apiUrl"`
 		DownloadURL        string `json:"downloadUrl"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&authResp); err != nil {
-		return fmt.Errorf("could not decode auth response: %w", err)
+	if err := json.Unmarshal(body, &authResp); err != nil {
+		return fmt.Errorf("could not decode B2 auth response: %w", err)
 	}
 
 	s.authToken = authResp.AuthorizationToken
@@ -136,46 +113,24 @@ func (s *b2StorageService) authorize() error {
 	return nil
 }
 
-// getUploadURL calls b2_get_upload_url to get a one-time upload URL for the bucket
-func (s *b2StorageService) getUploadURL(ctx context.Context) (*b2UploadURLResponse, error) {
-	// We need the bucket ID — look it up from the bucket name
-	bucketID, err := s.getBucketID(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	body, _ := json.Marshal(map[string]string{"bucketId": bucketID})
-	req, err := http.NewRequestWithContext(ctx, "POST", s.apiURL+"/b2api/v2/b2_get_upload_url", bytes.NewReader(body))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", s.authToken)
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("get_upload_url request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("get_upload_url failed (status %d): %s", resp.StatusCode, string(respBody))
-	}
-
-	var result b2UploadURLResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
-	}
-	return &result, nil
+// reauthorize forces a fresh authorization (call when token expires)
+func (s *b2StorageService) reauthorize() error {
+	s.mu.Lock()
+	s.authToken = ""
+	s.bucketID = ""
+	s.mu.Unlock()
+	return s.ensureAuthorized()
 }
 
-// getBucketID resolves a bucket name to its ID
+// getBucketID resolves the bucket name to its B2 bucket ID.
 func (s *b2StorageService) getBucketID(ctx context.Context) (string, error) {
+	s.mu.Lock()
 	if s.bucketID != "" {
-		return s.bucketID, nil
+		id := s.bucketID
+		s.mu.Unlock()
+		return id, nil
 	}
+	s.mu.Unlock()
 
 	body, _ := json.Marshal(map[string]string{"bucketName": s.bucketName})
 	req, err := http.NewRequestWithContext(ctx, "POST", s.apiURL+"/b2api/v2/b2_list_buckets", bytes.NewReader(body))
@@ -188,7 +143,7 @@ func (s *b2StorageService) getBucketID(ctx context.Context) (string, error) {
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("list_buckets request failed: %w", err)
+		return "", fmt.Errorf("b2_list_buckets request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -203,11 +158,50 @@ func (s *b2StorageService) getBucketID(ctx context.Context) (string, error) {
 	}
 	for _, b := range result.Buckets {
 		if b.BucketName == s.bucketName {
+			s.mu.Lock()
 			s.bucketID = b.BucketID
+			s.mu.Unlock()
 			return s.bucketID, nil
 		}
 	}
-	return "", fmt.Errorf("bucket '%s' not found", s.bucketName)
+	return "", fmt.Errorf("bucket '%s' not found in B2 account", s.bucketName)
+}
+
+// getUploadURL calls b2_get_upload_url to get a one-time upload URL.
+func (s *b2StorageService) getUploadURL(ctx context.Context) (string, string, error) {
+	bucketID, err := s.getBucketID(ctx)
+	if err != nil {
+		return "", "", err
+	}
+
+	body, _ := json.Marshal(map[string]string{"bucketId": bucketID})
+	req, err := http.NewRequestWithContext(ctx, "POST", s.apiURL+"/b2api/v2/b2_get_upload_url", bytes.NewReader(body))
+	if err != nil {
+		return "", "", err
+	}
+	req.Header.Set("Authorization", s.authToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", "", fmt.Errorf("b2_get_upload_url failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return "", "", fmt.Errorf("b2_get_upload_url failed (status %d): %s", resp.StatusCode, string(respBody))
+	}
+
+	var result struct {
+		UploadURL          string `json:"uploadUrl"`
+		AuthorizationToken string `json:"authorizationToken"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", "", err
+	}
+	return result.UploadURL, result.AuthorizationToken, nil
 }
 
 func (s *b2StorageService) UploadImage(
@@ -225,56 +219,60 @@ func (s *b2StorageService) UploadImage(
 	}
 	const maxFileSize = 10 * 1024 * 1024
 	if header.Size > maxFileSize {
-		return nil, fmt.Errorf("file size exceeds 10MB limit")
+		return nil, fmt.Errorf("file size exceeds the 10MB limit")
 	}
 
-	// Read entire file into memory for reliable upload
+	// Lazy authorization
+	if err := s.ensureAuthorized(); err != nil {
+		return nil, err
+	}
+
+	// Read entire file into memory (required for SHA1 and exact Content-Length)
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
-		return nil, fmt.Errorf("could not read file: %w", err)
+		return nil, fmt.Errorf("could not read uploaded file: %w", err)
 	}
 
 	// Detect content type
 	contentType := http.DetectContentType(fileBytes)
 
-	// Compute SHA1 for B2 integrity verification
+	// Compute SHA1 (required by B2)
 	h := sha1.New()
 	h.Write(fileBytes)
 	sha1Hex := fmt.Sprintf("%x", h.Sum(nil))
 
-	// Build unique file name
+	// Build unique file path
 	timestamp := time.Now().UnixMilli()
 	cleanName := strings.TrimSuffix(header.Filename, filepath.Ext(header.Filename))
 	cleanName = strings.ReplaceAll(cleanName, " ", "_")
-	// B2 native API uses forward slashes; URL-encode folder separators are fine
 	fileName := fmt.Sprintf("%s/%s_%d%s", folder, cleanName, timestamp, ext)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	// Get a one-time upload URL from B2
-	uploadInfo, err := s.getUploadURL(ctx)
+	// Get a one-time upload URL
+	uploadURL, uploadToken, err := s.getUploadURL(ctx)
 	if err != nil {
 		// Token may have expired — re-authorize and retry once
-		if err2 := s.authorize(); err2 == nil {
-			uploadInfo, err = s.getUploadURL(ctx)
+		if err2 := s.reauthorize(); err2 == nil {
+			uploadURL, uploadToken, err = s.getUploadURL(ctx)
 		}
 		if err != nil {
 			return nil, fmt.Errorf("could not get B2 upload URL: %w", err)
 		}
 	}
 
-	// Upload the file to B2
-	uploadReq, err := http.NewRequestWithContext(ctx, "POST", uploadInfo.UploadURL, bytes.NewReader(fileBytes))
+	// Upload the file
+	uploadReq, err := http.NewRequestWithContext(ctx, "POST", uploadURL, bytes.NewReader(fileBytes))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not build upload request: %w", err)
 	}
-	uploadReq.Header.Set("Authorization", uploadInfo.AuthorizationToken)
+	uploadReq.ContentLength = int64(len(fileBytes))
+	uploadReq.Header.Set("Authorization", uploadToken)
 	uploadReq.Header.Set("X-Bz-File-Name", fileName)
 	uploadReq.Header.Set("Content-Type", contentType)
 	uploadReq.Header.Set("Content-Length", fmt.Sprintf("%d", len(fileBytes)))
 	uploadReq.Header.Set("X-Bz-Content-Sha1", sha1Hex)
-	uploadReq.ContentLength = int64(len(fileBytes))
 
 	httpClient := &http.Client{Timeout: 60 * time.Second}
 	uploadResp, err := httpClient.Do(uploadReq)
@@ -284,13 +282,16 @@ func (s *b2StorageService) UploadImage(
 	defer uploadResp.Body.Close()
 
 	if uploadResp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(uploadResp.Body)
-		return nil, fmt.Errorf("B2 upload failed (status %d): %s", uploadResp.StatusCode, string(body))
+		respBody, _ := io.ReadAll(uploadResp.Body)
+		return nil, fmt.Errorf("B2 upload failed (status %d): %s", uploadResp.StatusCode, string(respBody))
 	}
 
 	// Construct public download URL
-	// B2 public download URL: {downloadUrl}/file/{bucketName}/{fileName}
-	secureURL := fmt.Sprintf("%s/file/%s/%s", strings.TrimSuffix(s.downloadURL, "/"), s.bucketName, fileName)
+	secureURL := fmt.Sprintf("%s/file/%s/%s",
+		strings.TrimSuffix(s.downloadURL, "/"),
+		s.bucketName,
+		fileName,
+	)
 
 	return &UploadResult{
 		PublicID:     fileName,
@@ -303,7 +304,10 @@ func (s *b2StorageService) UploadImage(
 
 // DeleteImage removes an image from B2 using the native API.
 func (s *b2StorageService) DeleteImage(publicID string) error {
-	// To delete, we need fileId first — list file versions and grab it
+	if err := s.ensureAuthorized(); err != nil {
+		return err
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -312,13 +316,13 @@ func (s *b2StorageService) DeleteImage(publicID string) error {
 		return err
 	}
 
-	// List file versions to get the fileId
-	body, _ := json.Marshal(map[string]interface{}{
+	// List to get the fileId
+	listBody, _ := json.Marshal(map[string]interface{}{
 		"bucketId":     bucketID,
 		"prefix":       publicID,
 		"maxFileCount": 1,
 	})
-	req, err := http.NewRequestWithContext(ctx, "POST", s.apiURL+"/b2api/v2/b2_list_file_names", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, "POST", s.apiURL+"/b2api/v2/b2_list_file_names", bytes.NewReader(listBody))
 	if err != nil {
 		return err
 	}
@@ -342,12 +346,11 @@ func (s *b2StorageService) DeleteImage(publicID string) error {
 		return err
 	}
 	if len(listResult.Files) == 0 {
-		return nil // File doesn't exist, nothing to delete
+		return nil // already deleted or doesn't exist
 	}
 
-	fileID := listResult.Files[0].FileID
 	deleteBody, _ := json.Marshal(map[string]string{
-		"fileId":   fileID,
+		"fileId":   listResult.Files[0].FileID,
 		"fileName": publicID,
 	})
 	delReq, err := http.NewRequestWithContext(ctx, "POST", s.apiURL+"/b2api/v2/b2_delete_file_version", bytes.NewReader(deleteBody))
@@ -361,6 +364,6 @@ func (s *b2StorageService) DeleteImage(publicID string) error {
 	if err != nil {
 		return err
 	}
-	defer delResp.Body.Close()
+	delResp.Body.Close()
 	return nil
 }
