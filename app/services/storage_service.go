@@ -15,6 +15,8 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	smithymiddleware "github.com/aws/smithy-go/middleware"
+	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
 // ImageFolder defines the folder/context the image belongs to.
@@ -70,6 +72,17 @@ func NewStorageService(cfg *config.Config) (StorageService, error) {
 		o.BaseEndpoint = aws.String(cfg.B2Endpoint)
 		o.UsePathStyle = true
 		o.Region = region
+		// Force UNSIGNED-PAYLOAD for B2 compliance
+		o.APIOptions = append(o.APIOptions, func(stack *smithymiddleware.Stack) error {
+			return stack.Finalize.Add(smithymiddleware.FinalizeMiddlewareFunc("B2UnsignedPayload", func(
+				ctx context.Context, input smithymiddleware.FinalizeInput, next smithymiddleware.FinalizeHandler,
+			) (smithymiddleware.FinalizeOutput, smithymiddleware.Metadata, error) {
+				if req, ok := input.Request.(*smithyhttp.Request); ok {
+					req.Header.Set("X-Amz-Content-Sha256", "UNSIGNED-PAYLOAD")
+				}
+				return next.HandleFinalize(ctx, input)
+			}), smithymiddleware.Before)
+		})
 	})
 
 	return &b2StorageService{
