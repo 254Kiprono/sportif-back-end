@@ -74,13 +74,13 @@ func NewStorageService(cfg *config.Config) (StorageService, error) {
 		o.Region = region
 		// Force UNSIGNED-PAYLOAD for B2 compliance
 		o.APIOptions = append(o.APIOptions, func(stack *smithymiddleware.Stack) error {
-			return stack.Finalize.Add(smithymiddleware.FinalizeMiddlewareFunc("B2UnsignedPayload", func(
-				ctx context.Context, input smithymiddleware.FinalizeInput, next smithymiddleware.FinalizeHandler,
-			) (smithymiddleware.FinalizeOutput, smithymiddleware.Metadata, error) {
+			return stack.Serialize.Add(smithymiddleware.SerializeMiddlewareFunc("B2UnsignedPayload", func(
+				ctx context.Context, input smithymiddleware.SerializeInput, next smithymiddleware.SerializeHandler,
+			) (smithymiddleware.SerializeOutput, smithymiddleware.Metadata, error) {
 				if req, ok := input.Request.(*smithyhttp.Request); ok {
 					req.Header.Set("X-Amz-Content-Sha256", "UNSIGNED-PAYLOAD")
 				}
-				return next.HandleFinalize(ctx, input)
+				return next.HandleSerialize(ctx, input)
 			}), smithymiddleware.Before)
 		})
 	})
