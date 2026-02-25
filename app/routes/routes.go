@@ -37,6 +37,12 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 	fanRepo := repository.NewFanRepository(db)
 	paymentRepo := repository.NewPaymentRepository(db)
 
+	// Storage Service (optional: graceful fallback if not configured)
+	storageSvc, err := services.NewStorageService(cfg)
+	if err != nil {
+		log.Printf("Storage service not configured: %v — image upload endpoints will be unavailable", err)
+	}
+
 	// Services
 	authService := services.NewAuthService(userRepo, roleRepo, cfg, rdb)
 	playerService := services.NewPlayerService(playerRepo)
@@ -44,18 +50,12 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 	fixtureService := services.NewFixtureService(fixtureRepo)
 	leagueService := services.NewLeagueService(leagueRepo)
 	newsService := services.NewNewsService(newsRepo)
-	ticketService := services.NewTicketService(ticketRepo)
+	ticketService := services.NewTicketService(ticketRepo, storageSvc)
 	membershipService := services.NewMembershipService(membershipRepo)
 	donationService := services.NewDonationService(donationRepo)
 	sponsorService := services.NewSponsorService(sponsorRepo)
 	fanService := services.NewFanService(fanRepo)
 	paymentService := services.NewPaymentService(paymentRepo)
-
-	// Storage Service (optional: graceful fallback if not configured)
-	storageSvc, err := services.NewStorageService(cfg)
-	if err != nil {
-		log.Printf("Backblaze B2 not configured: %v — image upload endpoints will be unavailable", err)
-	}
 
 	// Handlers
 	authHandler := handlers.NewAuthHandler(authService)
@@ -99,6 +99,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 
 		// Tickets (public)
 		api.GET("/tickets", ticketHandler.GetAll)
+		api.POST("/tickets/purchase-guest", ticketHandler.PurchaseGuest)
 
 		// Memberships (public)
 		api.GET("/memberships/plans", membershipHandler.GetPlans)
@@ -179,6 +180,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 				protected.DELETE("/news/:id", middleware.RequirePermission("delete_news"), newsHandler.Delete)
 
 				protected.POST("/tickets", middleware.RequirePermission("manage_tickets"), ticketHandler.Create)
+				protected.DELETE("/tickets/:id", middleware.RequirePermission("manage_tickets"), ticketHandler.Delete)
 				protected.GET("/store/orders", middleware.RequirePermission("manage_orders"), storeHandler.GetOrders)
 				protected.PUT("/store/orders/:id/status", middleware.RequirePermission("manage_orders"), storeHandler.UpdateStatus)
 				protected.POST("/memberships/plans", middleware.RequirePermission("manage_membership"), membershipHandler.CreatePlan)
@@ -192,6 +194,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 				admin.GET("/users", authHandler.GetAllUsers)
 				admin.POST("/users", authHandler.Create)
 				admin.DELETE("/users/:id", authHandler.Delete)
+				admin.GET("/ticket-orders", ticketHandler.GetOrders)
 				admin.GET("/sponsors", sponsorHandler.GetAll)
 				admin.POST("/sponsors", sponsorHandler.Create)
 				admin.PUT("/sponsors/:id", sponsorHandler.Update)

@@ -31,6 +31,7 @@ const (
 	FolderGeneral      ImageFolder = "sportif/general"
 	FolderJerseys      ImageFolder = "sportif/store/jerseys"
 	FolderPlayers      ImageFolder = "sportif/players"
+	FolderTickets      ImageFolder = "sportif/tickets"
 )
 
 // UploadResult holds the returned data after a successful upload.
@@ -44,6 +45,7 @@ type UploadResult struct {
 
 type StorageService interface {
 	UploadImage(file multipart.File, header *multipart.FileHeader, folder ImageFolder) (*UploadResult, error)
+	UploadData(data []byte, fileName string, contentType string, folder ImageFolder) (*UploadResult, error)
 	DeleteImage(publicID string) error
 }
 
@@ -191,8 +193,6 @@ func (s *r2StorageService) UploadImage(
 	if s.publicURL != "" {
 		secureURL = fmt.Sprintf("%s/%s", s.publicURL, fileName)
 	} else {
-		// Fallback URL directly targeting the bucket natively, typically these are private in R2,
-		// but we will provide something just in case.
 		baseEndpoint := ""
 		if s.client.Options().BaseEndpoint != nil {
 			baseEndpoint = *s.client.Options().BaseEndpoint
@@ -206,6 +206,42 @@ func (s *r2StorageService) UploadImage(
 		Format:       strings.TrimPrefix(ext, "."),
 		OriginalName: header.Filename,
 		Bytes:        len(fileBytes),
+	}, nil
+}
+
+func (s *r2StorageService) UploadData(data []byte, fileName string, contentType string, folder ImageFolder) (*UploadResult, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	fullPath := fmt.Sprintf("%s/%s", folder, fileName)
+
+	_, err := s.client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(s.bucketName),
+		Key:         aws.String(fullPath),
+		Body:        bytes.NewReader(data),
+		ContentType: aws.String(contentType),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("R2 upload failed: %w", err)
+	}
+
+	var secureURL string
+	if s.publicURL != "" {
+		secureURL = fmt.Sprintf("%s/%s", s.publicURL, fullPath)
+	} else {
+		baseEndpoint := ""
+		if s.client.Options().BaseEndpoint != nil {
+			baseEndpoint = *s.client.Options().BaseEndpoint
+		}
+		secureURL = fmt.Sprintf("%s/%s/%s", strings.TrimSuffix(baseEndpoint, "/"), s.bucketName, fullPath)
+	}
+
+	return &UploadResult{
+		PublicID:     fullPath,
+		SecureURL:    secureURL,
+		Format:       strings.TrimPrefix(filepath.Ext(fileName), "."),
+		OriginalName: fileName,
+		Bytes:        len(data),
 	}, nil
 }
 

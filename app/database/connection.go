@@ -53,6 +53,7 @@ func AutoMigrate() {
 		&models.Order{},
 		&models.OrderItem{},
 		&models.Ticket{},
+		&models.TicketOrder{},
 		&models.MembershipPlan{},
 		&models.MembershipOrder{},
 		&models.Donation{},
