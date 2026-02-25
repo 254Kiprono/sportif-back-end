@@ -44,7 +44,7 @@ type UploadResult struct {
 }
 
 type StorageService interface {
-	UploadImage(file multipart.File, header *multipart.FileHeader, folder ImageFolder) (*UploadResult, error)
+	UploadImage(file multipart.File, header *multipart.FileHeader, folder ImageFolder, customPrefix string) (*UploadResult, error)
 	UploadData(data []byte, fileName string, contentType string, folder ImageFolder) (*UploadResult, error)
 	DeleteImage(publicID string) error
 }
@@ -86,11 +86,7 @@ func NewStorageService(cfg *config.Config) (StorageService, error) {
 	}, nil
 }
 
-func (s *r2StorageService) UploadImage(
-	file multipart.File,
-	header *multipart.FileHeader,
-	folder ImageFolder,
-) (*UploadResult, error) {
+func (s *r2StorageService) UploadImage(file multipart.File, header *multipart.FileHeader, folder ImageFolder, customPrefix string) (*UploadResult, error) {
 	// Validate extension
 	ext := strings.ToLower(filepath.Ext(header.Filename))
 	allowedExts := map[string]bool{
@@ -170,8 +166,22 @@ func (s *r2StorageService) UploadImage(
 
 	// Build unique file path
 	timestamp := time.Now().UnixMilli()
-	cleanName := strings.TrimSuffix(header.Filename, filepath.Ext(header.Filename))
-	cleanName = strings.ReplaceAll(cleanName, " ", "_")
+	var cleanName string
+	if customPrefix != "" {
+		cleanName = customPrefix
+	} else {
+		cleanName = strings.TrimSuffix(header.Filename, filepath.Ext(header.Filename))
+	}
+
+	// Sanitize name: replace spaces and non-alphanumeric chars with underscores
+	cleanName = strings.ToLower(cleanName)
+	cleanName = strings.Map(func(r rune) rune {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			return r
+		}
+		return '_'
+	}, cleanName)
+
 	fileName := fmt.Sprintf("%s/%s_%d%s", folder, cleanName, timestamp, ext)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)

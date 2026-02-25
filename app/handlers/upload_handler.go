@@ -9,8 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// UploadHandler handles all image uploads via Backblaze B2.
-// It is separate from specific domain handlers (news, fixtures) so it's reusable.
+// UploadHandler handles all image uploads to R2
 type UploadHandler struct {
 	storageService services.StorageService
 }
@@ -19,19 +18,10 @@ func NewUploadHandler(storageService services.StorageService) *UploadHandler {
 	return &UploadHandler{storageService: storageService}
 }
 
-// UploadNewsImage handles image upload for news articles.
-// Protected: Author + Admin only (they create news content).
-//
-// Request: multipart/form-data with field "image"
-// Response: { "url": "...", "public_id": "...", "bytes": ... }
 func (h *UploadHandler) UploadNewsImage(c *gin.Context) {
 	h.handleUpload(c, services.FolderNews)
 }
 
-// UploadMatchPreview handles pre-match preview photo uploads.
-// Protected: CX + Admin only.
-//
-// Request: multipart/form-data with field "image"
 func (h *UploadHandler) UploadMatchPreview(c *gin.Context) {
 	h.handleUpload(c, services.FolderMatchPreview)
 }
@@ -62,6 +52,9 @@ func (h *UploadHandler) handleUpload(c *gin.Context, folder services.ImageFolder
 		return
 	}
 
+	// Try to get custom name from form (useful for player names, jersey names etc)
+	customName := c.PostForm("name")
+
 	file, err := fileHeader.Open()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open uploaded file"})
@@ -69,7 +62,7 @@ func (h *UploadHandler) handleUpload(c *gin.Context, folder services.ImageFolder
 	}
 	defer file.Close()
 
-	result, err := h.storageService.UploadImage(file, fileHeader, folder)
+	result, err := h.storageService.UploadImage(file, fileHeader, folder, customName)
 	if err != nil {
 		log.Printf("Upload failed: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -85,9 +78,6 @@ func (h *UploadHandler) handleUpload(c *gin.Context, folder services.ImageFolder
 	})
 }
 
-// DeleteImage removes an image from Backblaze B2.
-// Protected: Admin only.
-//
 // Request JSON: { "public_id": "sportif/news/my-image_1234567890.jpg" }
 func (h *UploadHandler) DeleteImage(c *gin.Context) {
 	var input struct {

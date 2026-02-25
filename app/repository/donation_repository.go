@@ -20,11 +20,12 @@ func NewDonationRepository(db *gorm.DB) DonationRepository {
 }
 
 func (r *donationRepository) Create(donation *models.Donation) error {
-	return r.db.Create(donation).Error
+	return r.db.Exec("INSERT INTO donations (id, created_at, updated_at, user_id, amount, message, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+		donation.ID, donation.CreatedAt, donation.UpdatedAt, donation.UserID, donation.Amount, donation.Message, donation.PaymentStatus).Error
 }
 
 func (r *donationRepository) GetAll() ([]models.Donation, error) {
 	var donations []models.Donation
-	err := r.db.Order("created_at DESC").Find(&donations).Error
+	err := r.db.Raw("SELECT * FROM donations ORDER BY created_at DESC").Scan(&donations).Error
 	return donations, err
 }

@@ -12,7 +12,6 @@ import (
 	"webuye-sportif/app/loggers"
 	"webuye-sportif/app/middleware"
 	"webuye-sportif/app/routes"
-	worker "webuye-sportif/app/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -68,10 +67,6 @@ func main() {
 		log.Printf("Redis unavailable: %v — session whitelisting disabled", err)
 	} else {
 		defer database.CloseRedisConn()
-		// Start background worker that clears Redis every 30 min (debug/cleanup)
-		redisWorker := worker.NewRedisWorker(database.Redis)
-		redisWorker.Start(ctx)
-		defer redisWorker.Stop()
 	}
 
 	// Initialize Gin (using New to configure SkipPaths for Health Check logs)

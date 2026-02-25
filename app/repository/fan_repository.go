@@ -24,24 +24,26 @@ func NewFanRepository(db *gorm.DB) FanRepository {
 
 func (r *fanRepository) GetAll() ([]models.Fan, error) {
 	var fans []models.Fan
-	err := r.db.Order("created_at DESC").Find(&fans).Error
+	err := r.db.Raw("SELECT * FROM fans ORDER BY created_at DESC").Scan(&fans).Error
 	return fans, err
 }
 
 func (r *fanRepository) GetByID(id string) (*models.Fan, error) {
 	var fan models.Fan
-	err := r.db.Where("id = ?", id).First(&fan).Error
+	err := r.db.Raw("SELECT * FROM fans WHERE id = ? LIMIT 1", id).Scan(&fan).Error
 	return &fan, err
 }
 
 func (r *fanRepository) Create(fan *models.Fan) error {
-	return r.db.Create(fan).Error
+	return r.db.Exec("INSERT INTO fans (id, created_at, updated_at, name, email, tier, join_date, location, membership_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		fan.ID, fan.CreatedAt, fan.UpdatedAt, fan.Name, fan.Email, fan.Tier, fan.JoinDate, fan.Location, fan.MembershipID).Error
 }
 
 func (r *fanRepository) Update(fan *models.Fan) error {
-	return r.db.Save(fan).Error
+	return r.db.Exec("UPDATE fans SET name = ?, email = ?, tier = ?, join_date = ?, location = ?, membership_id = ?, updated_at = NOW() WHERE id = ?",
+		fan.Name, fan.Email, fan.Tier, fan.JoinDate, fan.Location, fan.MembershipID, fan.ID).Error
 }
 
 func (r *fanRepository) Delete(id string) error {
-	return r.db.Delete(&models.Fan{}, "id = ?", id).Error
+	return r.db.Exec("DELETE FROM fans WHERE id = ?", id).Error
 }
