@@ -1,8 +1,10 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"image/jpeg"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -16,6 +18,7 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/disintegration/imaging"
 )
 
 // ImageFolder defines the folder/context the image belongs to.
@@ -113,16 +116,61 @@ func (s *r2StorageService) UploadImage(
 		contentType = http.DetectContentType(fileBytes)
 	}
 
+	// Seek back to start before reading for image processing
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return nil, fmt.Errorf("could not seek file: %w", err)
+	}
+
+	var uploadBody io.Reader = file
+	var uploadSize = header.Size
+
+	// Process image if it is JPEG or PNG
+	if contentType == "image/jpeg" || contentType == "image/png" {
+		img, err := imaging.Decode(file)
+		if err == nil {
+			// Resize while preserving aspect ratio if width is larger than 1200px
+			if img.Bounds().Dx() > 1200 {
+				img = imaging.Resize(img, 1200, 0, imaging.Lanczos)
+			}
+
+			// Encode to WEBP wrapper buffer or JPEG with high compression
+			var buf bytes.Buffer
+			if contentType == "image/jpeg" {
+				err = imaging.Encode(&buf, img, imaging.JPEG, imaging.JPEGQuality(75))
+			} else {
+				// Keep PNG intact, or could also compress PNG, but typical use case just resize
+				err = imaging.Encode(&buf, img, imaging.PNG, imaging.PNGCompressionLevel(jpeg.DefaultQuality))
+			}
+
+			if err == nil {
+				// We successfully compressed it
+				uploadBody = bytes.NewReader(buf.Bytes())
+				uploadSize = int64(buf.Len())
+				fileBytes = buf.Bytes() // For returning byte size later
+			} else {
+				// If compression failed, just fallback to the original file
+				if _, err := file.Seek(0, io.SeekStart); err != nil {
+					return nil, fmt.Errorf("could not seek file after compression failed: %w", err)
+				}
+			}
+		} else {
+			// If decoding fails, fall back to original
+			if _, err := file.Seek(0, io.SeekStart); err != nil {
+				return nil, fmt.Errorf("could not seek file after decode failure: %w", err)
+			}
+		}
+	} else {
+		// Seek back to start for the upload
+		if _, err := file.Seek(0, io.SeekStart); err != nil {
+			return nil, fmt.Errorf("could not seek file: %w", err)
+		}
+	}
+
 	// Build unique file path
 	timestamp := time.Now().UnixMilli()
 	cleanName := strings.TrimSuffix(header.Filename, filepath.Ext(header.Filename))
 	cleanName = strings.ReplaceAll(cleanName, " ", "_")
 	fileName := fmt.Sprintf("%s/%s_%d%s", folder, cleanName, timestamp, ext)
-
-	// Seek back to start for the upload
-	if _, err := file.Seek(0, io.SeekStart); err != nil {
-		return nil, fmt.Errorf("could not seek file: %w", err)
-	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -130,8 +178,8 @@ func (s *r2StorageService) UploadImage(
 	_, err = s.client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:        aws.String(s.bucketName),
 		Key:           aws.String(fileName),
-		Body:          file,
-		ContentLength: aws.Int64(header.Size),
+		Body:          uploadBody,
+		ContentLength: aws.Int64(uploadSize),
 		ContentType:   aws.String(contentType),
 	})
 	if err != nil {
