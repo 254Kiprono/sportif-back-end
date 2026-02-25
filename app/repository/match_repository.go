@@ -52,11 +52,13 @@ func (r *matchRepository) SaveLineup(lineup *models.Lineup) error {
 		if err := tx.Where("fixture_id = ?", lineup.FixtureID).First(&existing).Error; err == nil {
 			tx.Where("lineup_id = ?", existing.ID).Delete(&models.LineupPlayer{})
 			lineup.ID = existing.ID // Keep same ID
-			if err := tx.Save(lineup).Error; err != nil {
+			// Omit "Players" to prevent GORM from trying to insert them during Save
+			if err := tx.Omit("Players").Save(lineup).Error; err != nil {
 				return err
 			}
 		} else {
-			if err := tx.Create(lineup).Error; err != nil {
+			// Omit "Players" to prevent GORM from trying to insert them during Create
+			if err := tx.Omit("Players").Create(lineup).Error; err != nil {
 				return err
 			}
 		}
@@ -64,6 +66,7 @@ func (r *matchRepository) SaveLineup(lineup *models.Lineup) error {
 		for i := range lineup.Players {
 			lineup.Players[i].LineupID = lineup.ID
 			lineup.Players[i].Initialize()
+			// Now manually create each player record
 			if err := tx.Create(&lineup.Players[i]).Error; err != nil {
 				return err
 			}

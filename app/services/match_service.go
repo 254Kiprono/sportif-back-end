@@ -39,6 +39,11 @@ func (s *matchService) SaveLineup(lineup *models.Lineup) error {
 	if fixture.Status != "upcoming" {
 		return errors.New("cannot edit lineup after match has started or finished")
 	}
+
+	if len(lineup.Players) < 16 {
+		return errors.New("a match squad must have at least 16 players (Starting XI + Subs)")
+	}
+
 	return s.matchRepo.SaveLineup(lineup)
 }
 
