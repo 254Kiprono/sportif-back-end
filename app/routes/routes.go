@@ -36,6 +36,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 	sponsorRepo := repository.NewSponsorRepository(db)
 	fanRepo := repository.NewFanRepository(db)
 	paymentRepo := repository.NewPaymentRepository(db)
+	matchRepo := repository.NewMatchRepository(db)
 
 	// Storage Service (optional: graceful fallback if not configured)
 	storageSvc, err := services.NewStorageService(cfg)
@@ -56,6 +57,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 	sponsorService := services.NewSponsorService(sponsorRepo)
 	fanService := services.NewFanService(fanRepo)
 	paymentService := services.NewPaymentService(paymentRepo)
+	matchService := services.NewMatchService(matchRepo, playerRepo, fixtureRepo)
 
 	// Handlers
 	authHandler := handlers.NewAuthHandler(authService)
@@ -70,6 +72,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 	sponsorHandler := handlers.NewSponsorHandler(sponsorService)
 	fanHandler := handlers.NewFanHandler(fanService)
 	paymentHandler := handlers.NewPaymentHandler(paymentService)
+	matchHandler := handlers.NewMatchHandler(matchService)
 
 	api := r.Group("/")
 	{
@@ -100,6 +103,10 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 		// Tickets (public)
 		api.GET("/tickets", ticketHandler.GetAll)
 		api.POST("/tickets/purchase-guest", ticketHandler.PurchaseGuest)
+
+		// Match Center (public)
+		api.GET("/fixtures/:id/lineup", matchHandler.GetLineup)
+		api.GET("/fixtures/:id/events", matchHandler.GetEvents)
 
 		// Memberships (public)
 		api.GET("/memberships/plans", membershipHandler.GetPlans)
@@ -185,6 +192,12 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 				protected.PUT("/store/orders/:id/status", middleware.RequirePermission("manage_orders"), storeHandler.UpdateStatus)
 				protected.POST("/memberships/plans", middleware.RequirePermission("manage_membership"), membershipHandler.CreatePlan)
 				protected.GET("/donations", middleware.RequirePermission("view_donations"), donationHandler.GetAll)
+
+				// Match Control (Staff)
+				protected.POST("/fixtures/:id/lineup", middleware.RequirePermission("manage_league"), matchHandler.SaveLineup)
+				protected.POST("/fixtures/:id/start", middleware.RequirePermission("update_scores"), matchHandler.StartMatch)
+				protected.POST("/fixtures/:id/end", middleware.RequirePermission("update_scores"), matchHandler.EndMatch)
+				protected.POST("/fixtures/:id/events", middleware.RequirePermission("update_scores"), matchHandler.LogEvent)
 			}
 
 			// Admin Only Routes

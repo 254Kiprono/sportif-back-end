@@ -60,6 +60,9 @@ func AutoMigrate() {
 		&models.Sponsor{},
 		&models.Fan{},
 		&models.Payment{},
+		&models.MatchEvent{},
+		&models.Lineup{},
+		&models.LineupPlayer{},
 	)
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
