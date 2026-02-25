@@ -17,7 +17,7 @@ type Jersey struct {
 
 type Order struct {
 	BaseModel
-	UserID        uuid.UUID   `json:"user_id" gorm:"index"`
+	UserID        uuid.UUID   `json:"user_id" gorm:"type:char(36);index"`
 	User          User        `json:"user" gorm:"foreignKey:UserID"`
 	TotalAmount   float64     `json:"total_amount"`
 	Status        string      `json:"status" gorm:"default:'pending'"` // pending, paid, cancelled
@@ -27,8 +27,8 @@ type Order struct {
 
 type OrderItem struct {
 	BaseModel
-	OrderID   uuid.UUID `json:"order_id" gorm:"index"`
-	ProductID uuid.UUID `json:"product_id" gorm:"index"`
+	OrderID   uuid.UUID `json:"order_id" gorm:"type:char(36);index"`
+	ProductID uuid.UUID `json:"product_id" gorm:"type:char(36);index"`
 	Product   Jersey    `json:"product" gorm:"foreignKey:ProductID"`
 	Quantity  int       `json:"quantity"`
 	Price     float64   `json:"price"`

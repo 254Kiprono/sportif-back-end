@@ -4,7 +4,7 @@ import "github.com/google/uuid"
 
 type Ticket struct {
 	BaseModel
-	FixtureID         uuid.UUID `json:"fixture_id" gorm:"index"`
+	FixtureID         uuid.UUID `json:"fixture_id" gorm:"type:char(36);index"`
 	Fixture           Fixture   `json:"fixture" gorm:"foreignKey:FixtureID"`
 	Category          string    `json:"category" gorm:"size:50"` // VIP, Regular, VVIP
 	Price             float64   `json:"price"`
@@ -13,9 +13,9 @@ type Ticket struct {
 
 type TicketOrder struct {
 	BaseModel
-	TicketID    uuid.UUID  `json:"ticket_id" gorm:"index"`
+	TicketID    uuid.UUID  `json:"ticket_id" gorm:"type:char(36);index"`
 	Ticket      Ticket     `json:"ticket" gorm:"foreignKey:TicketID"`
-	UserID      *uuid.UUID `json:"user_id,omitempty" gorm:"index"`
+	UserID      *uuid.UUID `json:"user_id,omitempty" gorm:"type:char(36);index"`
 	User        *User      `json:"user,omitempty" gorm:"foreignKey:UserID"`
 	FullName    string     `json:"full_name"`
 	Mobile      string     `json:"mobile" gorm:"size:20"`

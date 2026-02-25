@@ -13,9 +13,9 @@ type MembershipPlan struct {
 
 type MembershipOrder struct {
 	BaseModel
-	UserID uuid.UUID      `json:"user_id" gorm:"index"`
+	UserID uuid.UUID      `json:"user_id" gorm:"type:char(36);index"`
 	User   User           `json:"user" gorm:"foreignKey:UserID"`
-	PlanID uuid.UUID      `json:"plan_id" gorm:"index"`
+	PlanID uuid.UUID      `json:"plan_id" gorm:"type:char(36);index"`
 	Plan   MembershipPlan `json:"plan" gorm:"foreignKey:PlanID"`
 	Amount float64        `json:"amount"`
 	Status string         `json:"status" gorm:"default:'pending'"`
