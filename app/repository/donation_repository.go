@@ -20,6 +20,7 @@ func NewDonationRepository(db *gorm.DB) DonationRepository {
 }
 
 func (r *donationRepository) Create(donation *models.Donation) error {
+	donation.Initialize()
 	return r.db.Exec("INSERT INTO donations (id, created_at, updated_at, user_id, amount, message, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?)",
 		donation.ID, donation.CreatedAt, donation.UpdatedAt, donation.UserID, donation.Amount, donation.Message, donation.PaymentStatus).Error
 }

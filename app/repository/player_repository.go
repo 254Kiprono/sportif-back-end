@@ -23,6 +23,7 @@ func NewPlayerRepository(db *gorm.DB) PlayerRepository {
 }
 
 func (r *playerRepository) Create(player *models.Player) error {
+	player.Initialize()
 	return r.db.Exec("INSERT INTO players (id, created_at, updated_at, name, position, jersey_number, nationality, age, appearances, goals, assists, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		player.ID, player.CreatedAt, player.UpdatedAt, player.Name, player.Position, player.JerseyNumber, player.Nationality, player.Age, player.Appearances, player.Goals, player.Assists, player.ImageURL).Error
 }

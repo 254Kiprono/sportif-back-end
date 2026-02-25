@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -17,12 +18,15 @@ func ConnectRedis(ctx context.Context, host, port, password string, db int) erro
 		DB:       db,
 	})
 
-	_, err := Redis.Ping(ctx).Result()
+	pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	_, err := Redis.Ping(pingCtx).Result()
 	if err != nil {
 		return fmt.Errorf("failed to connect to Redis: %w", err)
 	}
 
-	fmt.Println("Redis connected successfully")
+	log.Println("Redis connected successfully")
 	return nil
 }
 

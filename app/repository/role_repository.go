@@ -55,6 +55,7 @@ func (r *roleRepository) GetAll() ([]models.Role, error) {
 }
 
 func (r *roleRepository) Create(role *models.Role) error {
+	role.Initialize()
 	err := r.db.Exec("INSERT INTO roles (id, created_at, updated_at, name, description) VALUES (?, ?, ?, ?, ?)",
 		role.ID, role.CreatedAt, role.UpdatedAt, role.Name, role.Description).Error
 	if err != nil {

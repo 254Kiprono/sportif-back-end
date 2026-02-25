@@ -40,6 +40,7 @@ func (r *leagueRepository) Update(entry *models.LeagueTable) error {
 }
 
 func (r *leagueRepository) Create(entry *models.LeagueTable) error {
+	entry.Initialize()
 	return r.db.Exec("INSERT INTO league_tables (id, created_at, updated_at, team_name, played, wins, draws, losses, goals_for, goals_against, goal_difference, points, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		entry.ID, entry.CreatedAt, entry.UpdatedAt, entry.TeamName, entry.Played, entry.Wins, entry.Draws, entry.Losses, entry.GoalsFor, entry.GoalsAgainst, entry.GoalDifference, entry.Points, entry.Position).Error
 }

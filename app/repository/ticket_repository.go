@@ -62,11 +62,13 @@ func (r *ticketRepository) GetByID(id string) (*models.Ticket, error) {
 }
 
 func (r *ticketRepository) Create(ticket *models.Ticket) error {
+	ticket.Initialize()
 	return r.db.Exec("INSERT INTO tickets (id, created_at, updated_at, fixture_id, category, price, available_quantity) VALUES (?, ?, ?, ?, ?, ?, ?)",
 		ticket.ID, ticket.CreatedAt, ticket.UpdatedAt, ticket.FixtureID, ticket.Category, ticket.Price, ticket.AvailableQuantity).Error
 }
 
 func (r *ticketRepository) CreateOrder(order *models.TicketOrder) error {
+	order.Initialize()
 	return r.db.Exec("INSERT INTO ticket_orders (id, created_at, updated_at, ticket_id, full_name, mobile, email, category, order_number, quantity, total_amount, status, qr_code_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		order.ID, order.CreatedAt, order.UpdatedAt, order.TicketID, order.FullName, order.Mobile, order.Email, order.Category, order.OrderNumber, order.Quantity, order.TotalAmount, order.Status, order.QRCodeURL).Error
 }

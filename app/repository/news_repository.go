@@ -23,6 +23,7 @@ func NewNewsRepository(db *gorm.DB) NewsRepository {
 }
 
 func (r *newsRepository) Create(news *models.News) error {
+	news.Initialize()
 	return r.db.Exec("INSERT INTO news (id, created_at, updated_at, title, content, image_url, author_id, published, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		news.ID, news.CreatedAt, news.UpdatedAt, news.Title, news.Content, news.ImageURL, news.AuthorID, news.Published, news.Status).Error
 }

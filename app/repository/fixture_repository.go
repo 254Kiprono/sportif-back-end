@@ -22,6 +22,7 @@ func NewFixtureRepository(db *gorm.DB) FixtureRepository {
 }
 
 func (r *fixtureRepository) Create(fixture *models.Fixture) error {
+	fixture.Initialize()
 	return r.db.Exec("INSERT INTO fixtures (id, created_at, updated_at, home_team, away_team, match_date, venue, home_score, away_score, status, preview_image, preview_caption, match_photos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		fixture.ID, fixture.CreatedAt, fixture.UpdatedAt, fixture.HomeTeam, fixture.AwayTeam, fixture.MatchDate, fixture.Venue, fixture.HomeScore, fixture.AwayScore, fixture.Status, fixture.PreviewImage, fixture.PreviewCaption, fixture.MatchPhotos).Error
 }

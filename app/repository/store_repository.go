@@ -40,6 +40,7 @@ func (r *storeRepository) GetJerseyByID(id string) (*models.Jersey, error) {
 }
 
 func (r *storeRepository) CreateJersey(jersey *models.Jersey) error {
+	jersey.Initialize()
 	return r.db.Exec("INSERT INTO jerseys (id, created_at, updated_at, name, description, category, price, discount_percentage, stock_quantity, image_url, is_active, variants) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		jersey.ID, jersey.CreatedAt, jersey.UpdatedAt, jersey.Name, jersey.Description, jersey.Category, jersey.Price, jersey.DiscountPercentage, jersey.StockQuantity, jersey.ImageURL, jersey.IsActive, jersey.Variants).Error
 }
@@ -71,15 +72,17 @@ func (r *storeRepository) GetOrders() ([]models.Order, error) {
 }
 
 func (r *storeRepository) CreateOrder(order *models.Order) error {
-	// For orders, we'll use a transaction normally, but to be raw:
+	order.Initialize()
 	err := r.db.Exec("INSERT INTO orders (id, created_at, updated_at, user_id, total_amount, status, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?)",
 		order.ID, order.CreatedAt, order.UpdatedAt, order.UserID, order.TotalAmount, order.Status, order.PaymentMethod).Error
 	if err != nil {
 		return err
 	}
-	for _, item := range order.Items {
+	for i := range order.Items {
+		order.Items[i].Initialize()
+		order.Items[i].OrderID = order.ID
 		r.db.Exec("INSERT INTO order_items (id, created_at, updated_at, order_id, product_id, quantity, price) VALUES (?, ?, ?, ?, ?, ?, ?)",
-			item.ID, item.CreatedAt, item.UpdatedAt, item.OrderID, item.ProductID, item.Quantity, item.Price)
+			order.Items[i].ID, order.Items[i].CreatedAt, order.Items[i].UpdatedAt, order.Items[i].OrderID, order.Items[i].ProductID, order.Items[i].Quantity, order.Items[i].Price)
 	}
 	return nil
 }

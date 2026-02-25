@@ -34,11 +34,13 @@ func (r *membershipRepository) GetPlanByID(id string) (*models.MembershipPlan, e
 }
 
 func (r *membershipRepository) CreateOrder(order *models.MembershipOrder) error {
+	order.Initialize()
 	return r.db.Exec("INSERT INTO membership_orders (id, created_at, updated_at, user_id, plan_id, status) VALUES (?, ?, ?, ?, ?, ?)",
 		order.ID, order.CreatedAt, order.UpdatedAt, order.UserID, order.PlanID, order.Status).Error
 }
 
 func (r *membershipRepository) CreatePlan(plan *models.MembershipPlan) error {
+	plan.Initialize()
 	return r.db.Exec("INSERT INTO membership_plans (id, created_at, updated_at, name, description, price, duration_months, benefits) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 		plan.ID, plan.CreatedAt, plan.UpdatedAt, plan.Name, plan.Description, plan.Price, plan.DurationMonths, plan.Benefits).Error
 }

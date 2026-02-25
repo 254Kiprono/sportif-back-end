@@ -35,6 +35,7 @@ func (r *paymentRepository) GetByID(id string) (*models.Payment, error) {
 }
 
 func (r *paymentRepository) Create(payment *models.Payment) error {
+	payment.Initialize()
 	return r.db.Exec("INSERT INTO payments (id, created_at, updated_at, order_id, customer, amount, method, date, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		payment.ID, payment.CreatedAt, payment.UpdatedAt, payment.OrderID, payment.Customer, payment.Amount, payment.Method, payment.Date, payment.Status).Error
 }

@@ -35,6 +35,7 @@ func (r *sponsorRepository) GetByID(id string) (*models.Sponsor, error) {
 }
 
 func (r *sponsorRepository) Create(sponsor *models.Sponsor) error {
+	sponsor.Initialize()
 	return r.db.Exec("INSERT INTO sponsors (id, created_at, updated_at, name, logo, website, tier, contract_end, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		sponsor.ID, sponsor.CreatedAt, sponsor.UpdatedAt, sponsor.Name, sponsor.Logo, sponsor.Website, sponsor.Tier, sponsor.ContractEnd, sponsor.Active).Error
 }

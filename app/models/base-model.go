@@ -20,3 +20,16 @@ func (b *BaseModel) BeforeCreate(tx *gorm.DB) (err error) {
 	}
 	return
 }
+
+func (b *BaseModel) Initialize() {
+	if b.ID == uuid.Nil {
+		b.ID = uuid.New()
+	}
+	now := time.Now()
+	if b.CreatedAt.IsZero() {
+		b.CreatedAt = now
+	}
+	if b.UpdatedAt.IsZero() {
+		b.UpdatedAt = now
+	}
+}

@@ -35,6 +35,7 @@ func (r *fanRepository) GetByID(id string) (*models.Fan, error) {
 }
 
 func (r *fanRepository) Create(fan *models.Fan) error {
+	fan.Initialize()
 	return r.db.Exec("INSERT INTO fans (id, created_at, updated_at, name, email, tier, join_date, location, membership_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		fan.ID, fan.CreatedAt, fan.UpdatedAt, fan.Name, fan.Email, fan.Tier, fan.JoinDate, fan.Location, fan.MembershipID).Error
 }
