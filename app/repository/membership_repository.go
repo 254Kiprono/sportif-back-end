@@ -35,8 +35,8 @@ func (r *membershipRepository) GetPlanByID(id string) (*models.MembershipPlan, e
 
 func (r *membershipRepository) CreateOrder(order *models.MembershipOrder) error {
 	order.Initialize()
-	return r.db.Exec("INSERT INTO membership_orders (id, created_at, updated_at, user_id, plan_id, status) VALUES (?, ?, ?, ?, ?, ?)",
-		order.ID, order.CreatedAt, order.UpdatedAt, order.UserID, order.PlanID, order.Status).Error
+	return r.db.Exec("INSERT INTO membership_orders (id, created_at, updated_at, user_id, plan_id, amount, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+		order.ID, order.CreatedAt, order.UpdatedAt, order.UserID, order.PlanID, order.Amount, order.Status).Error
 }
 
 func (r *membershipRepository) CreatePlan(plan *models.MembershipPlan) error {

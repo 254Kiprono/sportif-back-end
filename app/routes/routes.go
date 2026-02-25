@@ -50,7 +50,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 	fixtureService := services.NewFixtureService(fixtureRepo)
 	leagueService := services.NewLeagueService(leagueRepo)
 	newsService := services.NewNewsService(newsRepo)
-	ticketService := services.NewTicketService(ticketRepo, storageSvc)
+	ticketService := services.NewTicketService(ticketRepo, userRepo, storageSvc)
 	membershipService := services.NewMembershipService(membershipRepo)
 	donationService := services.NewDonationService(donationRepo)
 	sponsorService := services.NewSponsorService(sponsorRepo)

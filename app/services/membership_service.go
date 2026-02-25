@@ -26,16 +26,28 @@ func (s *membershipService) GetPlans() ([]models.MembershipPlan, error) {
 }
 
 func (s *membershipService) Subscribe(userID string, planID string) (*models.MembershipOrder, error) {
-	uID, _ := uuid.Parse(userID)
-	pID, _ := uuid.Parse(planID)
+	uID, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, err
+	}
+	pID, err := uuid.Parse(planID)
+	if err != nil {
+		return nil, err
+	}
+
+	plan, err := s.repo.GetPlanByID(planID)
+	if err != nil {
+		return nil, err
+	}
 
 	order := &models.MembershipOrder{
 		UserID: uID,
 		PlanID: pID,
+		Amount: plan.Price,
 		Status: "pending",
 	}
 
-	err := s.repo.CreateOrder(order)
+	err = s.repo.CreateOrder(order)
 	return order, err
 }
 

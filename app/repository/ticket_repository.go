@@ -69,8 +69,8 @@ func (r *ticketRepository) Create(ticket *models.Ticket) error {
 
 func (r *ticketRepository) CreateOrder(order *models.TicketOrder) error {
 	order.Initialize()
-	return r.db.Exec("INSERT INTO ticket_orders (id, created_at, updated_at, ticket_id, full_name, mobile, email, category, order_number, quantity, total_amount, status, qr_code_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		order.ID, order.CreatedAt, order.UpdatedAt, order.TicketID, order.FullName, order.Mobile, order.Email, order.Category, order.OrderNumber, order.Quantity, order.TotalAmount, order.Status, order.QRCodeURL).Error
+	return r.db.Exec("INSERT INTO ticket_orders (id, created_at, updated_at, ticket_id, user_id, full_name, mobile, email, category, order_number, quantity, total_amount, status, qr_code_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		order.ID, order.CreatedAt, order.UpdatedAt, order.TicketID, order.UserID, order.FullName, order.Mobile, order.Email, order.Category, order.OrderNumber, order.Quantity, order.TotalAmount, order.Status, order.QRCodeURL).Error
 }
 
 func (r *ticketRepository) UpdateQuantity(id string, quantity int) error {

@@ -13,15 +13,17 @@ type Ticket struct {
 
 type TicketOrder struct {
 	BaseModel
-	TicketID    uuid.UUID `json:"ticket_id" gorm:"index"`
-	Ticket      Ticket    `json:"ticket" gorm:"foreignKey:TicketID"`
-	FullName    string    `json:"full_name"`
-	Mobile      string    `json:"mobile" gorm:"size:20"`
-	Email       string    `json:"email"`
-	Category    string    `json:"category" gorm:"size:50"`
-	OrderNumber string    `json:"order_number" gorm:"type:varchar(20);uniqueIndex"`
-	Quantity    int       `json:"quantity"`
-	TotalAmount float64   `json:"total_amount"`
-	Status      string    `json:"status" gorm:"size:20"` // pending, paid, etc.
-	QRCodeURL   string    `json:"qr_code_url"`
+	TicketID    uuid.UUID  `json:"ticket_id" gorm:"index"`
+	Ticket      Ticket     `json:"ticket" gorm:"foreignKey:TicketID"`
+	UserID      *uuid.UUID `json:"user_id,omitempty" gorm:"index"`
+	User        *User      `json:"user,omitempty" gorm:"foreignKey:UserID"`
+	FullName    string     `json:"full_name"`
+	Mobile      string     `json:"mobile" gorm:"size:20"`
+	Email       string     `json:"email"`
+	Category    string     `json:"category" gorm:"size:50"`
+	OrderNumber string     `json:"order_number" gorm:"type:varchar(20);uniqueIndex"`
+	Quantity    int        `json:"quantity"`
+	TotalAmount float64    `json:"total_amount"`
+	Status      string     `json:"status" gorm:"size:20"` // pending, paid, etc.
+	QRCodeURL   string     `json:"qr_code_url"`
 }

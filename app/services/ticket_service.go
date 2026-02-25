@@ -30,11 +30,12 @@ func (s *ticketService) GetAllOrders() ([]models.TicketOrder, error) {
 
 type ticketService struct {
 	repo       repository.TicketRepository
+	userRepo   repository.UserRepository
 	storageSvc StorageService
 }
 
-func NewTicketService(repo repository.TicketRepository, storageSvc StorageService) TicketService {
-	return &ticketService{repo, storageSvc}
+func NewTicketService(repo repository.TicketRepository, userRepo repository.UserRepository, storageSvc StorageService) TicketService {
+	return &ticketService{repo, userRepo, storageSvc}
 }
 
 func (s *ticketService) GetTickets() ([]models.Ticket, error) {
@@ -42,6 +43,11 @@ func (s *ticketService) GetTickets() ([]models.Ticket, error) {
 }
 
 func (s *ticketService) PurchaseTicket(ticketID string, userID string, quantity int) error {
+	user, err := s.userRepo.GetByID(userID)
+	if err != nil || user.ID == (models.BaseModel{}).ID {
+		return errors.New("user not found")
+	}
+
 	return s.repo.Transaction(func(txRepo repository.TicketRepository) error {
 		ticket, err := txRepo.GetByID(ticketID)
 		if err != nil {
@@ -52,13 +58,45 @@ func (s *ticketService) PurchaseTicket(ticketID string, userID string, quantity 
 			return errors.New("not enough tickets available")
 		}
 
+		uID := user.ID
+		order := &models.TicketOrder{
+			TicketID:    ticket.ID,
+			UserID:      &uID,
+			FullName:    user.FullName,
+			Email:       user.Email,
+			Mobile:      user.Phone,
+			Category:    ticket.Category,
+			Quantity:    quantity,
+			TotalAmount: ticket.Price * float64(quantity),
+			Status:      "paid", // Assume paid for authenticated purchases for now
+		}
+
+		orderNumber, err := generateOrderNumber()
+		if err != nil {
+			return err
+		}
+		order.OrderNumber = orderNumber
+
+		// Generate TICKET QR Code
+		if s.storageSvc != nil {
+			qrContent := fmt.Sprintf("https://webuye-sportif-fc.devsinkenya.com/verify-ticket?order=%s", order.OrderNumber)
+			png, err := qrcode.Encode(qrContent, qrcode.Medium, 256)
+			if err == nil {
+				fileName := fmt.Sprintf("ticket_%s.png", order.OrderNumber)
+				uploadResult, err := s.storageSvc.UploadData(png, fileName, "image/png", FolderTickets)
+				if err == nil {
+					order.QRCodeURL = uploadResult.SecureURL
+				}
+			}
+		}
+
 		// Deduct quantity
 		if err := txRepo.UpdateQuantity(ticketID, quantity); err != nil {
 			return err
 		}
 
-		// In a real app, you'd also create a TicketOrder record here
-		return nil
+		// Create the order record for tracing and revenue tracking
+		return txRepo.CreateOrder(order)
 	})
 }
 
@@ -86,7 +124,8 @@ func (s *ticketService) PurchaseTicketGuest(order *models.TicketOrder) error {
 
 		// Generate TICKET QR Code
 		if s.storageSvc != nil {
-			qrContent := fmt.Sprintf("TICKET:%s:%s", order.OrderNumber, order.FullName)
+			// Construct a validation URL so scanners recognize it as data/link
+			qrContent := fmt.Sprintf("https://webuye-sportif-fc.devsinkenya.com/verify-ticket?order=%s", order.OrderNumber)
 			png, err := qrcode.Encode(qrContent, qrcode.Medium, 256)
 			if err != nil {
 				return fmt.Errorf("failed to generate QR code: %w", err)
