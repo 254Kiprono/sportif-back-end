@@ -73,22 +73,18 @@ func (s *ticketService) PurchaseTicketGuest(order *models.TicketOrder) error {
 			return errors.New("not enough tickets available")
 		}
 
-		// Calculate total amount if not explicitly provided or to enforce pricing
 		order.TotalAmount = ticket.Price * float64(order.Quantity)
 
-		// If category not explicitly set in order, take from ticket
 		if order.Category == "" {
 			order.Category = ticket.Category
 		}
-
-		// Generate unique order number
 		orderNumber, err := generateOrderNumber()
 		if err != nil {
 			return err
 		}
 		order.OrderNumber = orderNumber
 
-		// Generate QR Code if storage service is available
+		// Generate TICKET QR Code
 		if s.storageSvc != nil {
 			qrContent := fmt.Sprintf("TICKET:%s:%s", order.OrderNumber, order.FullName)
 			png, err := qrcode.Encode(qrContent, qrcode.Medium, 256)
