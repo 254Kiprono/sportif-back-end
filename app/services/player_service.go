@@ -8,9 +8,9 @@ import (
 type PlayerService interface {
 	CreatePlayer(player *models.Player) error
 	GetPlayers() ([]models.Player, error)
-	GetPlayer(id string) (*models.Player, error)
+	GetPlayer(id uint) (*models.Player, error)
 	UpdatePlayer(player *models.Player) error
-	DeletePlayer(id string) error
+	DeletePlayer(id uint) error
 }
 
 type playerService struct {
@@ -29,7 +29,7 @@ func (s *playerService) GetPlayers() ([]models.Player, error) {
 	return s.repo.GetAll()
 }
 
-func (s *playerService) GetPlayer(id string) (*models.Player, error) {
+func (s *playerService) GetPlayer(id uint) (*models.Player, error) {
 	return s.repo.GetByID(id)
 }
 
@@ -37,6 +37,6 @@ func (s *playerService) UpdatePlayer(player *models.Player) error {
 	return s.repo.Update(player)
 }
 
-func (s *playerService) DeletePlayer(id string) error {
+func (s *playerService) DeletePlayer(id uint) error {
 	return s.repo.Delete(id)
 }

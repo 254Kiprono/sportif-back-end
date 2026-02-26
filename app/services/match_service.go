@@ -71,7 +71,7 @@ func (s *matchService) StartMatch(fixtureID string) error {
 		// Increment appearances for starters
 		for _, lp := range lineup.Players {
 			if lp.IsStarter {
-				player, err := s.playerRepo.GetByID(lp.PlayerID.String())
+				player, err := s.playerRepo.GetByID(lp.PlayerID)
 				if err == nil {
 					player.Appearances++
 					s.playerRepo.Update(player)
@@ -123,14 +123,14 @@ func (s *matchService) LogEvent(event *models.MatchEvent) error {
 			} else {
 				fixture.HomeScore++
 				if event.PlayerID != nil {
-					player, err := s.playerRepo.GetByID(event.PlayerID.String())
+					player, err := s.playerRepo.GetByID(*event.PlayerID)
 					if err == nil {
 						player.Goals++
 						s.playerRepo.Update(player)
 					}
 				}
 				if event.AssistPlayerID != nil {
-					asst, err := s.playerRepo.GetByID(event.AssistPlayerID.String())
+					asst, err := s.playerRepo.GetByID(*event.AssistPlayerID)
 					if err == nil {
 						asst.Assists++
 						s.playerRepo.Update(asst)
@@ -141,7 +141,7 @@ func (s *matchService) LogEvent(event *models.MatchEvent) error {
 
 		case models.EventSubstitution:
 			if event.PlayerID != nil { // PlayerID is the one coming ON
-				player, err := s.playerRepo.GetByID(event.PlayerID.String())
+				player, err := s.playerRepo.GetByID(*event.PlayerID)
 				if err == nil {
 					// Check if they already appeared (maybe they were starters? unlikely but safety)
 					// Logic: If they are coming on as sub, they get an appearance if not already marked.

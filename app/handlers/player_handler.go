@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 	"webuye-sportif/app/models"
 	"webuye-sportif/app/services"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type PlayerHandler struct {
@@ -48,12 +48,12 @@ func (h *PlayerHandler) Update(c *gin.Context) {
 	}
 
 	// Ensure external ID is consistent with URL param
-	uID, err := uuid.Parse(id)
+	uID, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid player ID format"})
 		return
 	}
-	player.ID = uID
+	player.ID = uint(uID)
 
 	if err := h.service.UpdatePlayer(&player); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error() + " for ID: " + id})
@@ -64,7 +64,12 @@ func (h *PlayerHandler) Update(c *gin.Context) {
 
 func (h *PlayerHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
-	if err := h.service.DeletePlayer(id); err != nil {
+	uID, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid player ID format"})
+		return
+	}
+	if err := h.service.DeletePlayer(uint(uID)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
