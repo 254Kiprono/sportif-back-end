@@ -40,6 +40,14 @@ func Connect(cfg *config.Config) {
 }
 
 func AutoMigrate() {
+	// Temporarily disable foreign key checks to allow structural changes
+	DB.Exec("SET FOREIGN_KEY_CHECKS = 0;")
+
+	// Drop tables with incompatible foreign keys for Player ID (UUID vs UINT)
+	// This is necessary because changing the type of a referenced column is not allowed while constraints exist.
+	// Since data needs to be re-entered anyway with the new ID format, dropping is safest.
+	DB.Migrator().DropTable("match_events", "lineup_players", "lineups")
+
 	err := DB.AutoMigrate(
 		&models.Permission{},
 		&models.Role{},
@@ -64,6 +72,10 @@ func AutoMigrate() {
 		&models.Lineup{},
 		&models.LineupPlayer{},
 	)
+
+	// Re-enable foreign key checks
+	DB.Exec("SET FOREIGN_KEY_CHECKS = 1;")
+
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
