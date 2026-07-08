@@ -136,7 +136,7 @@ func (s *r2StorageService) UploadImage(file multipart.File, header *multipart.Fi
 			if contentType == "image/jpeg" {
 				err = imaging.Encode(&buf, img, imaging.JPEG, imaging.JPEGQuality(75))
 			} else {
-				// Keep PNG intact, or could also compress PNG, but typical use case just resize
+				// Keep PNG intact, or could also comp  ress PNG, but typical use case just resize
 				err = imaging.Encode(&buf, img, imaging.PNG, imaging.PNGCompressionLevel(jpeg.DefaultQuality))
 			}
 

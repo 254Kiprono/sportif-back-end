@@ -93,7 +93,7 @@ func (s *authService) Login(identifier, password string) (string, error) {
 	// Unique session ID embedded in the JWT
 	jti := uuid.New().String()
 	// Session duration: 7 days
-	expTime := time.Hour * 24 * 7
+	expTime := time.Hour * 24 * 1
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"jti":         jti,
