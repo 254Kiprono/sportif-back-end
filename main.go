@@ -57,7 +57,7 @@ func main() {
 	// Connect to MySQL
 	database.Connect(cfg)
 
-	// Connect to Redis (optional — app works without it, sessions just won't be whitelisted)
+	// Connect to Redis
 	redisDB, err := strconv.Atoi(cfg.RedisDB)
 	if err != nil {
 		redisDB = 0

@@ -9,7 +9,7 @@ import (
 )
 
 func Seed() {
-	// 1. Permissions
+	//Permissions
 	permissions := []models.Permission{
 		{Name: "manage_users", Description: "Full user management"},
 		{Name: "assign_roles", Description: "Assign roles to users"},
@@ -42,7 +42,7 @@ func Seed() {
 		DB.FirstOrCreate(&permissions[i], models.Permission{Name: permissions[i].Name})
 	}
 
-	// 2. Roles
+	//Roles
 	// helper to get permissions by names
 	getPerms := func(names []string) []models.Permission {
 		var ps []models.Permission
@@ -92,7 +92,7 @@ func Seed() {
 		}
 	}
 
-	// 3. Admin User
+	//Admin User
 	var adminRole models.Role
 	DB.Where("name = ?", "admin").First(&adminRole)
 
@@ -100,7 +100,7 @@ func Seed() {
 	admin := models.User{
 		FullName: "System Admin",
 		Username: "admin",
-		Email:    "admin@webuyesportif.com",
+		Email:    "admin@example.com",
 		Phone:    utils.FormatMSISDNKE("0700000000"),
 		Password: string(hashedPassword),
 		RoleID:   adminRole.ID,
@@ -113,7 +113,7 @@ func Seed() {
 		RoleID:   admin.RoleID,
 	}).FirstOrCreate(&admin)
 
-	// 4. Author User
+	// Author User
 	var authorRole models.Role
 	DB.Where("name = ?", "author").First(&authorRole)
 
@@ -121,7 +121,7 @@ func Seed() {
 	author := models.User{
 		FullName: "Club Author",
 		Username: "author",
-		Email:    "author@webuyesportif.com",
+		Email:    "author@example.com",
 		Phone:    utils.FormatMSISDNKE("0711111111"),
 		Password: string(hashedAuthorPassword),
 		RoleID:   authorRole.ID,
@@ -133,7 +133,7 @@ func Seed() {
 		RoleID:   author.RoleID,
 	}).FirstOrCreate(&author)
 
-	// 5. Sample Players
+	// Sample Players
 	players := []models.Player{
 		{Name: "John Doe", Position: "Striker", JerseyNumber: 9, Nationality: "Kenyan", Age: 25},
 		{Name: "Jane Smith", Position: "Midfielder", JerseyNumber: 10, Nationality: "Kenyan", Age: 23},

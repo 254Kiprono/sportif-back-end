@@ -38,7 +38,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config, rdb *redis.Clie
 	paymentRepo := repository.NewPaymentRepository(db)
 	matchRepo := repository.NewMatchRepository(db)
 
-	// Storage Service (optional: graceful fallback if not configured)
+	// Storage Service
 	storageSvc, err := services.NewStorageService(cfg)
 	if err != nil {
 		log.Printf("Storage service not configured: %v — image upload endpoints will be unavailable", err)

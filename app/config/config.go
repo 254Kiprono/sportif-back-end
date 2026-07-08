@@ -27,6 +27,7 @@ type Config struct {
 	RedisDB       string
 }
 
+// LoadConfig loads configuration from environment variables or a .env file.
 func LoadConfig() *Config {
 	err := godotenv.Load()
 	if err != nil {

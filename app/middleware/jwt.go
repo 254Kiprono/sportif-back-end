@@ -14,19 +14,18 @@ import (
 )
 
 // AuthMiddleware validates the JWT and, if Redis is available, verifies the session
-// is still live (whitelisting approach). rdb can be nil — session check is skipped.
 func AuthMiddleware(cfg *config.Config, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
+			c.JSON(http.StatusUnauthorized, gin.H{"Error": "Authorization header required"})
 			c.Abort()
 			return
 		}
 
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization format"})
+			c.JSON(http.StatusUnauthorized, gin.H{"Error": "Invalid authorization format"})
 			c.Abort()
 			return
 		}
@@ -34,20 +33,20 @@ func AuthMiddleware(cfg *config.Config, rdb *redis.Client) gin.HandlerFunc {
 		tokenString := parts[1]
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 			}
 			return []byte(cfg.JWTSecret), nil
 		})
 
 		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+			c.JSON(http.StatusUnauthorized, gin.H{"Error": "Invalid or expired token"})
 			c.Abort()
 			return
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+			c.JSON(http.StatusUnauthorized, gin.H{"Error": "Invalid token claims"})
 			c.Abort()
 			return
 		}
@@ -55,7 +54,7 @@ func AuthMiddleware(cfg *config.Config, rdb *redis.Client) gin.HandlerFunc {
 		// Validate JTI (session ID) against Redis whitelist
 		jti, ok := claims["jti"].(string)
 		if !ok || jti == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token missing session identifier"})
+			c.JSON(http.StatusUnauthorized, gin.H{"Error": "Token missing session identifier"})
 			c.Abort()
 			return
 		}
@@ -65,7 +64,7 @@ func AuthMiddleware(cfg *config.Config, rdb *redis.Client) gin.HandlerFunc {
 			_, err = rdb.Get(ctx, fmt.Sprintf("session:%s", jti)).Result()
 			if err != nil {
 				// Key missing = session was logged out or expired in Redis
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "Session expired or terminated. Please login again."})
+				c.JSON(http.StatusUnauthorized, gin.H{"Error": "Session expired or terminated. Please login again."})
 				c.Abort()
 				return
 			}
@@ -98,7 +97,7 @@ func RequireRole(roleName string) gin.HandlerFunc {
 		}
 
 		if currentUserRole != roleName {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions: role " + roleName + " required"})
+			c.JSON(http.StatusForbidden, gin.H{"Error": "Insufficient permissions: role " + roleName + " required"})
 			c.Abort()
 			return
 		}
@@ -121,7 +120,7 @@ func RequireAnyRole(roles []string) gin.HandlerFunc {
 			}
 		}
 
-		c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions: one of the required roles not found"})
+		c.JSON(http.StatusForbidden, gin.H{"Error": "Insufficient permissions: one of the required roles not found"})
 		c.Abort()
 	}
 }
@@ -136,7 +135,7 @@ func RequirePermission(permission string) gin.HandlerFunc {
 
 		perms, exists := c.Get("permissions")
 		if !exists {
-			c.JSON(http.StatusForbidden, gin.H{"error": "No permissions found"})
+			c.JSON(http.StatusForbidden, gin.H{"Error": "No permissions found"})
 			c.Abort()
 			return
 		}
@@ -149,7 +148,7 @@ func RequirePermission(permission string) gin.HandlerFunc {
 			}
 		}
 
-		c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions: " + permission + " required"})
+		c.JSON(http.StatusForbidden, gin.H{"Error": "Insufficient permissions: " + permission + " required"})
 		c.Abort()
 	}
 }
